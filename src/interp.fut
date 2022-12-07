@@ -48,6 +48,31 @@ module type interpreter_simple  = {
 }
 
 
+-- | Simple interpreter interface
+module type interpreter_branch = {
+  type idx
+  type u
+  -- | Define the instructionset for the simple interpreter
+  include interpreter
+    with idx=idx
+    with u=u
+    with instruction =
+             #add idx -- Add value located at `idx` to default storage member
+           | #sub idx -- Subtract value ...
+           | #mul idx -- ...
+           | #div idx -- ...
+           | #store idx -- Move value located in default storage member to `idx`
+           | #load idx  -- Load value located at `idx` to default storage member
+           | #cnst u    -- Load constant value to default storage member
+
+           | #lt idx    -- (default reg < idx) ? true : false
+           | #gt idx    -- (default reg > idx) ? true : false
+           | #eq idx    -- (default reg = idx) ? true : false
+           | #jmp i64   -- Add i64 to PC
+           | #jmpif i64 -- Add i64 to PC if condition is true
+}
+
+
 -- | Generic type wrapper,
 --   inspired by the scalar module in the vector library at
 --   github.com/athas/vector/blob/master/lib/github.com/athas/vector/vspace.fut
