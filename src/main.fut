@@ -8,6 +8,36 @@ module ir_32 = interp_list_memory f64 { def numregs = 32 : i64 }
 
 module it_4 =  interp_tuple_memory f64
 
+-- ==
+-- input { 0f64 100f64    100i64 }
+-- input { 0f64 100f64    150i64 }
+-- input { 0f64 100f64    200i64 }
+-- input { 0f64 100f64    250i64 }
+-- input { 0f64 100f64    300i64 }
+-- input { 0f64 100f64    350i64 }
+-- input { 0f64 100f64    400i64 }
+-- input { 0f64 100f64    450i64 }
+-- input { 0f64 100f64    500i64 }
+-- input { 0f64 100f64   1000i64 }
+-- input { 0f64 100f64   1250i64 }
+-- input { 0f64 100f64   1500i64 }
+-- input { 0f64 100f64   1750i64 }
+-- input { 0f64 100f64   2000i64 }
+-- input { 0f64 100f64   2500i64 }
+-- input { 0f64 100f64   5000i64 }
+-- input { 0f64 100f64   7500i64 }
+-- input { 0f64 100f64  10000i64 }
+-- input { 0f64 100f64  25000i64 }
+-- input { 0f64 100f64  50000i64 }
+-- input { 0f64 100f64  75000i64 }
+-- input { 0f64 100f64 100000i64 }
+-- input { 0f64 100f64 125000i64 }
+-- input { 0f64 100f64 150000i64 }
+-- input { 0f64 100f64 175000i64 }
+-- input { 0f64 100f64 200000i64 }
+-- input { 0f64 100f64 250000i64 }
+-- input { 0f64 100f64 500000i64 }
+-- input { 0f64 100f64 750000i64 }
 entry main (min: f64) (max: f64) (n: i64) : [n]f64 =
   -- (max - min) / n
   let interval = (/) ((-) max min) (f64.i64 (n-1)) in
