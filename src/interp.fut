@@ -15,6 +15,7 @@ local module type state = {
   val set  : state -> idx -> u -> state
 }
 
+
 -- | Common Interpreter Interface
 module type interpreter = {
   include state
@@ -26,6 +27,7 @@ module type interpreter = {
   -- | Evaluate the program, returning a new state
   val eval [n] : state -> [n]instruction -> state
 }
+
 
 -- | Simple interpreter interface
 module type interpreter_simple  = {
@@ -45,6 +47,10 @@ module type interpreter_simple  = {
            | #cnst u    -- Load constant value to default storage member
 }
 
+
+-- | Generic type wrapper,
+--   inspired by the scalar module in the vector library at
+--   github.com/athas/vector/blob/master/lib/github.com/athas/vector/vspace.fut
 module type memtype = {
   type t
 
