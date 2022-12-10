@@ -2,25 +2,15 @@
 
 set -e
 
-# bench.sh [-k inputcol] [-b BACKEND[,BACKEND...]]  PROGRAM.fut
-#
-# A script to run benchmarks with several backends on a single futhark program
-# and collects the results into a single csv file, sorted by backend.
-#
-# The input (x-axis/n) parameter in the resulting csv file is by default taken
-# from the first input to the benchmark.  Ie. If we have a spec corresponding to
-# `input {X Y Z}`, then `X` is taken. This can be changed with the `-k` argument,
-# which is zero indexed.
-#
-# By default, the following backends are run:
-BACKENDS=('c' 'ispc' 'multicore' 'opencl')
-
 # Default values
 INPUTCOL=0
-FUTHARK_ARGS=()
+BACKENDS=('c' 'ispc' 'multicore' 'opencl')
+CSV=""
+RANGE=""
 SKIP_BENCHMARKS=""
 SKIP_CSV=""
-CSV=""
+QUIET=""
+FUTHARK_ARGS=()
 
 ! [ -t 1 ] && QUIET="PIPE"
 
@@ -37,6 +27,10 @@ while [[ $# -gt 0 ]]; do
     -o|--csv)
       CSV="${2}"
       shift;shift;;
+
+    -r|--range)
+      RANGE="RANGEMATCH"
+      shift;;
 
     --skip-benchmarks)
       SKIP_BENCHMARKS="SKIP"
@@ -75,6 +69,7 @@ while [[ $# -gt 0 ]]; do
   -b BACKEND(S)       A comma seperated list of backends to run the benchmark
                       on. Default is: \"${BB// /,}\"
   -o CSV              Name of the output csv file, printed to stdout otherwise.
+  --range             Match benchmark arguments with random input.
   --skip-benchmarks   Skip running the actual benchmarks, useful if they have
                       already been run, but not formatted
   --skip-csv          Skip printing/writing the csv output.
@@ -84,6 +79,10 @@ while [[ $# -gt 0 ]]; do
   --                  all arguments after \"--\" is passed to "futhark-bench"
 "
       exit 0
+      ;;
+    *)
+      echo "Unknown argument \"$1\""
+      exit 1
   esac
 done
 
@@ -104,18 +103,28 @@ fi
 
 if [ -z "${SKIP_CSV}" ]; then
   ## Some common sed regular expressions/commands
-  # Removes all lines not starting with '#'
-  RE_RESULT_LINES='/^#/!d'
   # strip type suffixes from the input
-  RE_TYPES='s/(i|f)(8|16|32|64)//g'
+  RE_TYPES='(i|f)(8|16|32|64)'
+  RE_RM_TYPES="s/${RE_TYPES}//g"
+  # Removes all lines not starting with '#'
+  RE_RESULT_LINES="/^#|${RE_TYPES}|\[[0-9]\]${RE_TYPES}/!d"
   # Retrieve the average runtime from the input
-  RE_RESULTS='s/^.*\(".*"\): *([0-9]+)μs .*/\1/'
-  # Retrieve the ${INPUTCOL}th line
-  RE_N_COLUMN="s/.*\\(\"([0-9]+\\.?[0-9]+? |true |false ){${INPUTCOL}}([0-9]+\\.?[0-9]+?|true|false) ?.*\"\\).*/\\2/g"
+  RE_RESULTS='s/^.*: *([0-9]+)μs .*/\1/'
 
-  RESULT="n,$(sed -E "${RE_RESULT_LINES};${RE_TYPES};${RE_N_COLUMN}" "result-${BACKENDS[0]}.bench" | csvcut -K 0 | tr '\n' ',' | sed -E 's/,$//')"
+  # Match input parameters  ## TODO: Detect argument type instead
+  if [ -z "${RANGE}" ]; then
+    RE_N_COLUMN="s/.*\\(\"([0-9]+\\.?[0-9]+? |true |false ){${INPUTCOL}}([0-9]+\\.?[0-9]+?|true|false) ?.*\"\\).*/\\2/g"
+  else
+    RE_N_COLUMN="s/^ *(\[[0-9]+\] |[0-9]+ ){2}(\[([0-9]+)\]|([0-9]+)) ?.*: .*/\\4\\3/g"
+    #            s/ *(\[([0-9]+\\.?[0-9]+?)\] ){${INPUTCOL}}(\[([0-9]+\\.?[0-9]+?)\]) ?.*: .*/\\4/g
+  fi
+
+  # Get `n` and the input sizes
+  RESULT="n,$(sed -E "${RE_RESULT_LINES};${RE_RM_TYPES};${RE_N_COLUMN}" "result-${BACKENDS[0]}.bench" | tr '\n' ',' | sed -E 's/,$//')"
+  echo $RESULT
+  echo ""
   for b in "${BACKENDS[@]}"; do
-    R=$(sed -E "${RE_RESULT_LINES};${RE_TYPES};${RE_RESULTS}" "result-${b}.bench" | tr '\n' ',' | sed -E 's/,$//')
+    R=$(sed -E "${RE_RESULT_LINES};${RE_RM_TYPES};${RE_RESULTS}" "result-${b}.bench" | tr '\n' ',' | sed -E 's/,$//')
     RESULT="${RESULT}\n${b},${R}"
   done
 
