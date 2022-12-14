@@ -38,7 +38,7 @@
 -- input {  50_000_000i64 }
 -- input {  75_000_000i64 }
 -- input { 100_000_000i64 }
-open import "interp_registers"
+open import "vm_simple"
 
 module id_4 = interp_dynamic_memory f64 { def numregs =  4 : i64 }
 module it_4 = interp_tuple_4_memory f64

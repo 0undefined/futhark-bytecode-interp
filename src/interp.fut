@@ -48,7 +48,7 @@ module type interpreter_simple  = {
 
 
 -- | Branching interpreter interface
-module type interpreter_branch = {
+module type interpreter_branch_complex = {
   type idx
   type u
   include interpreter
