@@ -12,6 +12,10 @@ module interp_list_memory (t: memtype) (P: {val numregs : i64}) : interpreter_si
   type state = [length]u
 
   type idx = i64
+  let ra : idx = 0
+  let rb : idx = 1
+  let rc : idx = 2
+  let rd : idx = 3
 
   type instruction = #add idx  | #sub idx   | #mul idx | #div idx
                    | #load idx | #store idx | #cnst u
@@ -20,6 +24,7 @@ module interp_list_memory (t: memtype) (P: {val numregs : i64}) : interpreter_si
   def init v           = replicate length v
   def get  s (i:idx)   = s[i]
   def set  s (i:idx) v = (copy s) with [i] = v
+  def return  s        = get s 0
 
   def (+) (a: u) (b: u) = t.(a + b)
   def (*) (a: u) (b: u) = t.(a * b)
@@ -51,6 +56,10 @@ module interp_tuple_memory (t: memtype) : interpreter_simple
   type state = (u, u, u, u)
 
   type idx = (#ra | #rb | #rc | #rd)
+  let ra : idx = #ra
+  let rb : idx = #rb
+  let rc : idx = #rc
+  let rd : idx = #rd
 
   type instruction = #add idx  | #sub idx   | #mul idx | #div idx
                    | #load idx | #store idx | #cnst u
@@ -69,6 +78,7 @@ module interp_tuple_memory (t: memtype) : interpreter_simple
     case #rb -> (a,v,c,d)
     case #rc -> (a,b,v,d)
     case #rd -> (a,b,c,v)
+  def return ((a,_,_,_):state) = a
 
   def (+) (a: u) (b: u) = t.(a + b)
   def (*) (a: u) (b: u) = t.(a * b)

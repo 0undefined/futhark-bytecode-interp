@@ -6,6 +6,10 @@ local module type state = {
   type state
   -- | The datatype used to identify data in state, typically i64 or a sumtype
   type idx
+  val ra : idx
+  val rb : idx
+  val rc : idx
+  val rd : idx
 
   -- | Initialize the state with singular value
   val init : u -> state
@@ -13,6 +17,7 @@ local module type state = {
   val get  : state -> idx -> u
   -- | Set value at `idx` in state
   val set  : state -> idx -> u -> state
+  val return  : state -> u
 }
 
 
