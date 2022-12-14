@@ -70,11 +70,13 @@ module type interpreter_branch = {
            | #load idx  -- Load value located at `idx` to default storage member
            | #cnst u    -- Load constant value to default storage member
 
-           | #lt idx    -- (default reg < idx) ? true : false
-           | #gt idx    -- (default reg > idx) ? true : false
-           | #eq idx    -- (default reg = idx) ? true : false
-           | #jmp i64   -- Add i64 to PC
-           | #jmpif i64 -- Add i64 to PC if condition is true
+           | #cmp   idx -- Set ZF and CF flags in state
+                        -- ZF iff. r[#] = r[idx]
+                        -- CF iff. r[#] < r[idx]
+           | #jmp   i64 -- Add i64 to PC
+           | #jmplt i64 -- Add i64 to PC if condition is true
+           | #jmpgt i64 -- Add i64 to PC if condition is true
+           | #jmpeq i64 -- Add i64 to PC if condition is true
 }
 
 
