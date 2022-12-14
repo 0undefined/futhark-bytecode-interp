@@ -1,11 +1,5 @@
-open import "interp_registers"
-
-module id_4 = interp_dynamic_memory f64 { def numregs =  4 : i64 }
-module it_4 = interp_tuple_4_memory f64
-module iv_4 = interp_vector_4_memory f64
-
 -- ==
--- entry: array_2 vec_4 tuple_4 pure
+-- entry: dynamic_4 vector_4 tuple_4 pure
 --- input {    100i64 }
 --- input {    150i64 }
 --- input {    200i64 }
@@ -35,62 +29,49 @@ module iv_4 = interp_vector_4_memory f64
 --- input { 250000i64 }
 --- input { 500000i64 }
 --- input { 750000i64 }
-entry array_4 (n: i64) : [n]f64 =
+open import "interp_registers"
+
+module id_4 = interp_dynamic_memory f64 { def numregs =  4 : i64 }
+module it_4 = interp_tuple_4_memory f64
+module iv_4 = interp_vector_4_memory f64
+
+
+def gen_input (n: i64) : [n]f64 =
   let (min,max) = (0f64, 100f64) in
-  -- (max - min) / n
   let interval = (/) ((-) max min) (f64.i64 (n-1)) in
+  map (\m -> f64.i64 m * interval + min) (iota n)
 
-  let input = map (\m -> f64.i64 m * interval + min) (iota n) in
 
-  -- let input = iota n |> map (f64.i64) |> map ()
+entry dynamic_4 (n: i64) : [n]f64 =
   let prog = \initial_v -> id_4.([
     #cnst initial_v,
     #store rb,
     #cnst  0.5f64,
     #mul   rb
   ]) in
-  map (\f -> id_4.(eval (init 0) (prog f) |> return)) input
+  map (\f -> id_4.(eval (init 0) (prog f) |> return)) (gen_input n)
 
 
-entry vec_4 (n: i64) : [n]f64 =
-  let (min,max) = (0f64, 100f64) in
-  -- (max - min) / n
-  let interval = (/) ((-) max min) (f64.i64 (n-1)) in
-
-  let input = map (\m -> f64.i64 m * interval + min) (iota n) in
-
-  -- let input = iota n |> map (f64.i64) |> map ()
+entry vector_4 (n: i64) : [n]f64 =
   let prog = \initial_v -> iv_4.([
     #cnst initial_v,
     #store rb,
     #cnst  0.5f64,
     #mul   rb
   ]) in
-  map (\f -> iv_4.(eval (init 0) (prog f) |> return)) input
+  map (\f -> iv_4.(eval (init 0) (prog f) |> return)) (gen_input n)
 
 
 entry tuple_4 (n: i64) : [n]f64 =
-  let (min,max) = (0f64, 100f64) in
-  -- (max - min) / n
-  let interval = (/) ((-) max min) (f64.i64 (n-1)) in
-
-  let input = map (\m -> f64.i64 m * interval + min) (iota n) in
-
-  -- let input = iota n |> map (f64.i64) |> map ()
   let prog = \initial_v -> it_4.([
       #cnst initial_v
       , #store rb
       , #cnst  0.5f64
       , #mul   rb
   ]) in
-  map (\f -> it_4.(eval (init 0) (prog f) |> return)) input
+  map (\f -> it_4.(eval (init 0) (prog f) |> return)) (gen_input n)
 
 
 entry pure (n: i64) : [n]f64 =
-  let (min,max) = (0f64, 100f64) in
-  let interval = (/) ((-) max min) (f64.i64 (n-1)) in
-
-  let input = map (\m -> f64.i64 m * interval + min) (iota n) in
-
   let prog = \x -> (x * 0.5) in
-  map prog input
+  map prog (gen_input n)
