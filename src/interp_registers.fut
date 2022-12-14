@@ -2,7 +2,7 @@ import "lib/github.com/athas/vector/vector"
 open import "interp"
 
 
-module interp_list_memory (t: memtype) (P: {val numregs : i64}) : interpreter_simple
+module interp_dynamic_memory (t: memtype) (P: {val numregs : i64}) : interpreter_simple
   with u = t.t
   with idx = i64
   = {
@@ -94,7 +94,7 @@ module interp_vector_4_memory (t: memtype) : interpreter_simple
 }
 
 
-module interp_tuple_memory (t: memtype) : interpreter_simple
+module interp_tuple_4_memory (t: memtype) : interpreter_simple
   with u = t.t
   = {
 
