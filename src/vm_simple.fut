@@ -1,5 +1,5 @@
 import "lib/github.com/athas/vector/vector"
-open import "interp"
+open import "interpreter"
 
 
 module interp_dynamic_memory (t: memtype) (P: {val numregs : i64}) : interpreter_simple
