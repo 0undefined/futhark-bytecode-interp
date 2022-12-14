@@ -1,3 +1,5 @@
+open import "instructions"
+
 -- | Virtual Machine State type
 local module type state = {
   -- | The type of data the vm works on, f32, i64 etc.
@@ -38,45 +40,32 @@ module type interpreter = {
 module type interpreter_simple  = {
   type idx
   type u
-  -- | Define the instructionset for the simple interpreter
   include interpreter
     with idx=idx
     with u=u
-    with instruction =
-             #add idx -- Add value located at `idx` to default storage member
-           | #sub idx -- Subtract value ...
-           | #mul idx -- ...
-           | #div idx -- ...
-           | #store idx -- Move value located in default storage member to `idx`
-           | #load idx  -- Load value located at `idx` to default storage member
-           | #cnst u    -- Load constant value to default storage member
+    with instruction = instruction_simple idx u
 }
 
 
--- | Simple interpreter interface
+-- | Branching interpreter interface
 module type interpreter_branch = {
   type idx
   type u
-  -- | Define the instructionset for the simple interpreter
   include interpreter
     with idx=idx
     with u=u
-    with instruction =
-             #add idx -- Add value located at `idx` to default storage member
-           | #sub idx -- Subtract value ...
-           | #mul idx -- ...
-           | #div idx -- ...
-           | #store idx -- Move value located in default storage member to `idx`
-           | #load idx  -- Load value located at `idx` to default storage member
-           | #cnst u    -- Load constant value to default storage member
+    with instruction = instruction_jump_long idx u
+}
 
-           | #cmp   idx -- Set ZF and CF flags in state
-                        -- ZF iff. r[#] = r[idx]
-                        -- CF iff. r[#] < r[idx]
-           | #jmp   i64 -- Add i64 to PC
-           | #jmplt i64 -- Add i64 to PC if condition is true
-           | #jmpgt i64 -- Add i64 to PC if condition is true
-           | #jmpeq i64 -- Add i64 to PC if condition is true
+
+-- | Reduced branching interpreter interface
+module type interpreter_branch = {
+  type idx
+  type u
+  include interpreter
+    with idx=idx
+    with u=u
+    with instruction = instruction_jump idx u
 }
 
 

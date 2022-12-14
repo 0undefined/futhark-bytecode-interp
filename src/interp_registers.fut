@@ -18,8 +18,7 @@ module interp_dynamic_memory (t: memtype) (P: {val numregs : i64}) : interpreter
   let rc : idx = 2
   let rd : idx = 3
 
-  type instruction = #add idx  | #sub idx   | #mul idx | #div idx
-                   | #load idx | #store idx | #cnst u
+  type instruction = instruction_simple idx u
 
   -- def stdreplicate = replicate
   def init v           = replicate length v
@@ -65,8 +64,7 @@ module interp_vector_4_memory (t: memtype) : interpreter_simple
   let rc : idx = 2
   let rd : idx = 3
 
-  type instruction = #add idx  | #sub idx   | #mul idx | #div idx
-                   | #load idx | #store idx | #cnst u
+  type instruction = instruction_simple idx u
 
   -- def stdreplicate = replicate
   def init v           = replicate (v4.length) v |> v4.from_array
@@ -109,8 +107,7 @@ module interp_tuple_4_memory (t: memtype) : interpreter_simple
   let rc : idx = #rc
   let rd : idx = #rd
 
-  type instruction = #add idx  | #sub idx   | #mul idx | #div idx
-                   | #load idx | #store idx | #cnst u
+  type instruction = instruction_simple idx u
 
   -- def stdreplicate = replicate
   def init v           = (v,v,v,v)
