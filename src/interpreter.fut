@@ -12,6 +12,10 @@ local module type state = {
   val rb : idx
   val rc : idx
   val rd : idx
+  val re : idx
+  val rf : idx
+  val rg : idx
+  val rh : idx
 
   -- | Initialize the state with singular value
   val init : u -> state

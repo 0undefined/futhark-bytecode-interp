@@ -17,10 +17,13 @@ module interp_dynamic_memory (t: memtype) (P: {val numregs : i64}) : interpreter
   let rb : idx = 1
   let rc : idx = 2
   let rd : idx = 3
+  let re : idx = 4
+  let rf : idx = 5
+  let rg : idx = 6
+  let rh : idx = 7
 
   type instruction = instruction_simple idx u
 
-  -- def stdreplicate = replicate
   def init v           = replicate length v
   def get  s (i:idx)   = s[i]
   def set  s (i:idx) v = (copy s) with [i] = v
@@ -63,10 +66,13 @@ module interp_vector_4_memory (t: memtype) : interpreter_simple
   let rb : idx = 1
   let rc : idx = 2
   let rd : idx = 3
+  let re : idx = 4
+  let rf : idx = 5
+  let rg : idx = 6
+  let rh : idx = 7
 
   type instruction = instruction_simple idx u
 
-  -- def stdreplicate = replicate
   def init v           = replicate (v4.length) v |> v4.from_array
   def get  s (i:idx)   = v4.get i s
   def set  s (i:idx) v = v4.set i v s
@@ -101,15 +107,18 @@ module interp_tuple_4_memory (t: memtype) : interpreter_simple
   let length = 4i64
   type state = (u, u, u, u)
 
-  type idx = (#ra | #rb | #rc | #rd)
+  type idx = (#ra | #rb | #rc | #rd | #re | #rf | #rg | #rh)
   let ra : idx = #ra
   let rb : idx = #rb
   let rc : idx = #rc
   let rd : idx = #rd
+  let re : idx = #re
+  let rf : idx = #rf
+  let rg : idx = #rg
+  let rh : idx = #rh
 
   type instruction = instruction_simple idx u
 
-  -- def stdreplicate = replicate
   def init v           = (v,v,v,v)
   def get  ((a,b,c,d):state) (r:idx) =
     match r
@@ -117,12 +126,14 @@ module interp_tuple_4_memory (t: memtype) : interpreter_simple
     case #rb -> b
     case #rc -> c
     case #rd -> d
+    case _   -> a
   def set  ((a,b,c,d):state) (r:idx) v =
     match r
     case #ra -> (v,b,c,d)
     case #rb -> (a,v,c,d)
     case #rc -> (a,b,v,d)
     case #rd -> (a,b,c,v)
+    case _   -> (v,b,c,d)
   def return ((a,_,_,_):state) = a
 
   def (+) (a: u) (b: u) = t.(a + b)
