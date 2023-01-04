@@ -33,6 +33,7 @@ module interp_dynamic_memory (t: memtype) (P: {val numregs : i64}) : interpreter
   def (*) (a: u) (b: u) = t.(a * b)
   def (/) (a: u) (b: u) = t.(a / b)
   def (-) (a: u) (b: u) = t.(a - b)
+  def sqrt (a: u)       = t.sqrt(a)
 
   def eval [n] (s: state) (p: [n]instruction) =
     let step (instr: instruction) (s: state) =
@@ -42,6 +43,7 @@ module interp_dynamic_memory (t: memtype) (P: {val numregs : i64}) : interpreter
       case #sub index -> (-) fstval (get s index) |> set s 0
       case #mul index -> (*) fstval (get s index) |> set s 0
       case #div index -> (/) fstval (get s index) |> set s 0
+      case #sqrt      -> sqrt fstval              |> set s 0
       case #store index -> set s index fstval
       case #load  index -> get s index |> set s 0
       case #cnst v -> set s 0 v
@@ -82,6 +84,7 @@ module interp_vector_4_memory (t: memtype) : interpreter_simple
   def (*) (a: u) (b: u) = t.(a * b)
   def (/) (a: u) (b: u) = t.(a / b)
   def (-) (a: u) (b: u) = t.(a - b)
+  def sqrt (a: u)       = t.sqrt(a)
 
   def eval [n] (s: state) (p: [n]instruction) =
     let step (instr: instruction) (s: state) =
@@ -91,9 +94,10 @@ module interp_vector_4_memory (t: memtype) : interpreter_simple
       case #sub index -> (-) fstval (get s index) |> set s 0
       case #mul index -> (*) fstval (get s index) |> set s 0
       case #div index -> (/) fstval (get s index) |> set s 0
+      case #sqrt      -> sqrt fstval              |> set s 0
+      case #cnst v    -> set s 0 v
       case #store index -> set s index fstval
       case #load  index -> get s index |> set s 0
-      case #cnst v -> set s 0 v
     in loop s for i < n do step p[i] s
 }
 
@@ -140,6 +144,7 @@ module interp_tuple_4_memory (t: memtype) : interpreter_simple
   def (*) (a: u) (b: u) = t.(a * b)
   def (/) (a: u) (b: u) = t.(a / b)
   def (-) (a: u) (b: u) = t.(a - b)
+  def sqrt (a: u)       = t.sqrt(a)
 
   def eval [n] (s: state) (p: [n]instruction) =
     let step (instr: instruction) (s: state) =
@@ -149,8 +154,9 @@ module interp_tuple_4_memory (t: memtype) : interpreter_simple
       case #sub index -> (-) fstval (get s index) |> set s #ra
       case #mul index -> (*) fstval (get s index) |> set s #ra
       case #div index -> (/) fstval (get s index) |> set s #ra
+      case #sqrt      -> sqrt fstval              |> set s #ra
+      case #cnst v    -> set s #ra v
       case #store index -> set s index fstval
       case #load  index -> get s index |> set s #ra
-      case #cnst v -> set s #ra v
     in loop s for i < n do step p[i] s
 }

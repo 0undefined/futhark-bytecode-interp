@@ -84,6 +84,8 @@ module type memtype = {
   val *: t -> t -> t
   val /: t -> t -> t
 
+  val sqrt : t -> t
+
   val i32: i32 -> t
   val i64: i64 -> t
   val f32: f32 -> t

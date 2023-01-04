@@ -11,9 +11,11 @@ type instruction_simple 'idx 'a =
   | #sub idx   -- Subtract value ...
   | #mul idx   -- ...
   | #div idx   -- ...
+  | #sqrt      -- sqrt(default register)
+  | #cnst a    -- Load constant value to default storage member
+  -- memory stuff
   | #store idx -- Move value located in default storage member to `idx`
   | #load idx  -- Load value located at `idx` to default storage member
-  | #cnst a    -- Load constant value to default storage member
 
 
 -- | An extended version of `instruction_simple`, with branching. It includes
@@ -24,10 +26,11 @@ type instruction_jump_long 'idx 'a =
   | #sub idx
   | #mul idx
   | #div idx
-  | #sqrt idx
+  | #sqrt
+  | #cnst a
+
   | #store idx
   | #load idx
-  | #cnst a
 
   | #cmp   idx -- Set ZF and CF flags in state
                -- ZF iff. r[#] = r[idx]
@@ -45,9 +48,12 @@ type instruction_jump_long 'idx 'a =
 type instruction_jump 'idx 'a =
     #add   idx
   | #mul   idx
+  | #sqrt
+  | #cnst  a
+
   | #store idx
   | #load  idx
-  | #cnst  a
+
   | #jmp   i64
   | #jmplt idx i64
   | #halt
