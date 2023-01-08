@@ -111,7 +111,7 @@ module interp_tuple_4_memory (t: memtype) : interpreter_simple
   let length = 4i64
   type state = (u, u, u, u)
 
-  type idx = (#ra | #rb | #rc | #rd | #re | #rf | #rg | #rh)
+  type idx = #ra | #rb | #rc | #rd | #re | #rf | #rg | #rh
   let ra : idx = #ra
   let rb : idx = #rb
   let rc : idx = #rc

@@ -19,11 +19,15 @@ local module type state = {
 
   -- | Initialize the state with singular value
   val init : u -> state
+
   -- | Get `idx` in state
-  val get  : state -> idx -> u
+  val get : state -> idx -> u
+
   -- | Set value at `idx` in state
-  val set  : state -> idx -> u -> state
-  val return  : state -> u
+  val set : state -> idx -> u -> state
+
+  -- | Return some value from state
+  val return : state -> u
 }
 
 
@@ -41,7 +45,7 @@ module type interpreter = {
 
 
 -- | Simple interpreter interface
-module type interpreter_simple  = {
+module type interpreter_simple = {
   type idx
   type u
   include interpreter
