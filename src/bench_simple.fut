@@ -1,86 +1,206 @@
 -- ==
--- entry: dynamic_4 vector_4 tuple_4 pure
--- input {         100i64 }
--- input {         150i64 }
--- input {         200i64 }
--- input {         250i64 }
--- input {         300i64 }
--- input {         350i64 }
--- input {         400i64 }
--- input {         450i64 }
--- input {         500i64 }
--- input {       1_000i64 }
--- input {       1_250i64 }
--- input {       1_500i64 }
--- input {       1_750i64 }
--- input {       2_000i64 }
--- input {       2_500i64 }
--- input {       5_000i64 }
--- input {       7_500i64 }
--- input {      10_000i64 }
--- input {      25_000i64 }
--- input {      50_000i64 }
--- input {      75_000i64 }
--- input {     100_000i64 }
--- input {     125_000i64 }
--- input {     150_000i64 }
--- input {     175_000i64 }
--- input {     200_000i64 }
--- input {     250_000i64 }
--- input {     500_000i64 }
--- input {     750_000i64 }
--- input {   1_000_000i64 }
--- input {   2_500_000i64 }
--- input {   5_000_000i64 }
--- input {   7_500_000i64 }
--- input {  10_000_000i64 }
--- input {  25_000_000i64 }
--- input {  50_000_000i64 }
--- input {  75_000_000i64 }
--- input { 100_000_000i64 }
+-- entry: half_d4 half_v4 half_t4 half_pure
+-- random input {         [100]f64 }
+-- random input {         [150]f64 }
+-- random input {         [200]f64 }
+-- random input {         [250]f64 }
+-- random input {         [300]f64 }
+-- random input {         [350]f64 }
+-- random input {         [400]f64 }
+-- random input {         [450]f64 }
+-- random input {         [500]f64 }
+-- random input {       [1_000]f64 }
+-- random input {       [1_250]f64 }
+-- random input {       [1_500]f64 }
+-- random input {       [1_750]f64 }
+-- random input {       [2_000]f64 }
+-- random input {       [2_500]f64 }
+-- random input {       [5_000]f64 }
+-- random input {       [7_500]f64 }
+-- random input {      [10_000]f64 }
+-- random input {      [25_000]f64 }
+-- random input {      [50_000]f64 }
+-- random input {      [75_000]f64 }
+-- random input {     [100_000]f64 }
+-- random input {     [125_000]f64 }
+-- random input {     [150_000]f64 }
+-- random input {     [175_000]f64 }
+-- random input {     [200_000]f64 }
+-- random input {     [250_000]f64 }
+-- random input {     [500_000]f64 }
+-- random input {     [750_000]f64 }
+-- random input {   [1_000_000]f64 }
+-- random input {   [2_500_000]f64 }
+-- random input {   [5_000_000]f64 }
+-- random input {   [7_500_000]f64 }
+-- random input {  [10_000_000]f64 }
+-- random input {  [25_000_000]f64 }
+-- random input {  [50_000_000]f64 }
+-- random input {  [75_000_000]f64 }
+-- random input { [100_000_000]f64 }
+
+-- ==
+-- entry: euler_d4 euler_v4 euler_t4 euler_pure
+-- random input {         [100]f64         [100]f64 }
+-- random input {         [150]f64         [150]f64 }
+-- random input {         [200]f64         [200]f64 }
+-- random input {         [250]f64         [250]f64 }
+-- random input {         [300]f64         [300]f64 }
+-- random input {         [350]f64         [350]f64 }
+-- random input {         [400]f64         [400]f64 }
+-- random input {         [450]f64         [450]f64 }
+-- random input {         [500]f64         [500]f64 }
+-- random input {       [1_000]f64       [1_000]f64 }
+-- random input {       [1_250]f64       [1_250]f64 }
+-- random input {       [1_500]f64       [1_500]f64 }
+-- random input {       [1_750]f64       [1_750]f64 }
+-- random input {       [2_000]f64       [2_000]f64 }
+-- random input {       [2_500]f64       [2_500]f64 }
+-- random input {       [5_000]f64       [5_000]f64 }
+-- random input {       [7_500]f64       [7_500]f64 }
+-- random input {      [10_000]f64      [10_000]f64 }
+-- random input {      [25_000]f64      [25_000]f64 }
+-- random input {      [50_000]f64      [50_000]f64 }
+-- random input {      [75_000]f64      [75_000]f64 }
+-- random input {     [100_000]f64     [100_000]f64 }
+-- random input {     [125_000]f64     [125_000]f64 }
+-- random input {     [150_000]f64     [150_000]f64 }
+-- random input {     [175_000]f64     [175_000]f64 }
+-- random input {     [200_000]f64     [200_000]f64 }
+-- random input {     [250_000]f64     [250_000]f64 }
+-- random input {     [500_000]f64     [500_000]f64 }
+-- random input {     [750_000]f64     [750_000]f64 }
+-- random input {   [1_000_000]f64   [1_000_000]f64 }
+-- random input {   [2_500_000]f64   [2_500_000]f64 }
+-- random input {   [5_000_000]f64   [5_000_000]f64 }
+-- random input {   [7_500_000]f64   [7_500_000]f64 }
+-- random input {  [10_000_000]f64  [10_000_000]f64 }
+-- random input {  [25_000_000]f64  [25_000_000]f64 }
+-- random input {  [50_000_000]f64  [50_000_000]f64 }
+-- random input {  [75_000_000]f64  [75_000_000]f64 }
+-- random input { [100_000_000]f64 [100_000_000]f64 }
 open import "vm_simple"
 
-module id_4 = interp_dynamic_memory f64 { def numregs =  4 : i64 }
-module it_4 = interp_tuple_4_memory f64
-module iv_4 = interp_vector_4_memory f64
+module real = f64
+
+module id_4 = interp_dynamic_memory real { def numregs =  4 : i64 }
+module it_4 = interp_tuple_4_memory real
+module iv_4 = interp_vector_4_memory real
 
 
-def gen_input (n: i64) : [n]f64 =
-  let (min,max) = (0f64, 100f64) in
-  let interval = (/) ((-) max min) (f64.i64 (n-1)) in
-  map (\m -> f64.i64 m * interval + min) (iota n)
+--| Run halving function using interpreter with dynamic allocated memory
+entry half_d4 [n] (a: [n]f64) : [n]f64 =
+  let prog : [n][4]id_4.instruction = map (\v -> id_4.(
+  [ #cnst  v
+  , #store rb
+  , #cnst  0.5f64
+  , #mul   rb
+  ])) a in
+  map (\p -> id_4.(eval (init 0) p |> return)) prog
 
 
-entry dynamic_4 (n: i64) : [n]f64 =
-  let prog = \initial_v -> id_4.([
-    #cnst initial_v,
-    #store rb,
-    #cnst  0.5f64,
-    #mul   rb
-  ]) in
-  map (\f -> id_4.(eval (init 0) (prog f) |> return)) (gen_input n)
+--| Run halving function using interpreter with vectorized memory
+entry half_v4 [n] (a: [n]f64) : [n]f64 =
+  let prog = map (\v -> iv_4.(
+  [ #cnst  v
+  , #store rb
+  , #cnst  0.5f64
+  , #mul   rb
+  ])) a in
+  map (\p -> iv_4.(eval (init 0) p |> return)) prog
 
 
-entry vector_4 (n: i64) : [n]f64 =
-  let prog = \initial_v -> iv_4.([
-    #cnst initial_v,
-    #store rb,
-    #cnst  0.5f64,
-    #mul   rb
-  ]) in
-  map (\f -> iv_4.(eval (init 0) (prog f) |> return)) (gen_input n)
+--| Run halving function using interpreter using tuple as memory structure
+entry half_t4 [n] (a: [n]f64) : [n]f64 =
+  let prog = map (\initial_v -> it_4.(
+  [ #cnst initial_v
+  , #store rb
+  , #cnst  0.5f64
+  , #mul   rb
+  ])) a in
+  map (\p -> it_4.(eval (init 0) p |> return)) prog
 
 
-entry tuple_4 (n: i64) : [n]f64 =
-  let prog = \initial_v -> it_4.([
-      #cnst initial_v
-      , #store rb
-      , #cnst  0.5f64
-      , #mul   rb
-  ]) in
-  map (\f -> it_4.(eval (init 0) (prog f) |> return)) (gen_input n)
+--| Run halving function purely in futhark
+entry half_pure [n] (a: [n]f64) : [n]f64 =
+  map ((*) 0.5) a
 
 
-entry pure (n: i64) : [n]f64 =
-  let prog = \x -> (x * 0.5) in
-  map prog (gen_input n)
+--| Calculate euclidean distance with dynamic memory
+entry euler_d4 [n] (a: [n]f64) (b: [n]f64) : [n]f64 =
+  let prog = map2 (\x y -> id_4.(
+  [ -- dist(x, y) = sqrt(x^2 + y^2)
+      #cnst  x
+    , #store rb
+    , #cnst  y
+
+    -- y ^ 2
+    , #mul   ra
+    , #store rc
+
+    -- x ^ 2
+    , #load  rb
+    , #mul   ra
+
+    -- (+) y^2
+    , #add   rc
+
+    -- (sqrt)
+    , #sqrt
+  ])) a b in
+  map (\p -> id_4.(eval (init 0) p |> return)) prog
+
+
+--| Calculate euclidean distance with vectorized memory
+entry euler_v4 [n] (a: [n]f64) (b: [n]f64) : [n]f64 =
+  let prog = map2 (\x y -> iv_4.(
+  [ -- dist(a, b) = sqrt(a^2 + b^2)
+      #cnst  x
+    , #store rb
+    , #cnst  y
+
+    -- y ^ 2
+    , #mul   ra
+    , #store rc
+
+    -- x ^ 2
+    , #load  rb
+    , #mul   ra
+
+    -- (+) y^2
+    , #add   rc
+
+    -- (sqrt)
+    , #sqrt
+  ])) a b in
+  map (\p -> iv_4.(eval (init 0) p |> return)) prog
+
+
+--| Calculate euclidean distance using tuple as memory structure
+entry euler_t4 [n] (a: [n]f64) (b: [n]f64) : [n]f64 =
+  let prog = map2 (\x y -> it_4.(
+  [ -- dist(a, b) = sqrt(a^2 + b^2)
+      #cnst  x
+    , #store rb
+    , #cnst  y
+
+    -- y ^ 2
+    , #mul   ra
+    , #store rc
+
+    -- x ^ 2
+    , #load  rb
+    , #mul   ra
+
+    -- (+) y^2
+    , #add   rc
+
+    -- (sqrt)
+    , #sqrt
+  ])) a b in
+  map (\p -> it_4.(eval (init 0) p |> return)) prog
+
+
+--| Calculate euclidean distance purely in futhark
+entry euler_pure [n] (a: [n]f64) (b: [n]f64) : [n]f64 =
+  map2 (\x y -> f64.sqrt (x*x + y*y)) a b
