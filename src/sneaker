@@ -11,6 +11,7 @@ SKIP_BENCHMARKS=""
 SKIP_CSV=""
 QUIET=""
 FUTHARK_ARGS=()
+BENCHMARK_DIR=${BENCHMARK_DIR:-.benchmarks}
 
 ! [ -t 1 ] && QUIET="PIPE"
 
@@ -90,11 +91,13 @@ done
 CPUMODEL=$(lscpu | sed '/Model name/!d;s/^.*: *//')
 NUMPROCS=$(nproc)
 
+! [ -d "${BENCHMARK_DIR}" ] && mkdir -p ${BENCHMARK_DIR}
+
 # Run the benchmarks
 if [ -z "${SKIP_BENCHMARKS}" ]; then
   for b in "${BACKENDS[@]}"; do
     [ -z "${QUIET}" ] && echo "Running benchmarks with '$b' backend..."
-    RESULTFILE=result-$b.bench
+    RESULTFILE=${BENCHMARK_DIR}/result-$b.bench
     echo "${CPUMODEL} with ${NUMPROCS} cores" > "$RESULTFILE"
     echo "Backend: $b" >> "$RESULTFILE"
     futhark bench --backend="$b" "${FUTHARK_ARGS[@]}" "${FUTHARK_PROGRAM}" >> "$RESULTFILE"
@@ -119,10 +122,9 @@ if [ -z "${SKIP_CSV}" ]; then
   fi
 
   # Get `n` and the input sizes
-  RESULT="n,$(sed -E "${RE_RESULT_LINES};${RE_RM_TYPES};${RE_N_COLUMN}" "result-${BACKENDS[0]}.bench" | tr '\n' ',' | sed -E 's/,$//')"
-  echo $RESULT
+  RESULT="n,$(sed -E "${RE_RESULT_LINES};${RE_RM_TYPES};${RE_N_COLUMN}" "${BENCHMARK_DIR}/result-${BACKENDS[0]}.bench" | tr '\n' ',' | sed -E 's/,$//')"
   for b in "${BACKENDS[@]}"; do
-    R=$(sed -E "${RE_RESULT_LINES};${RE_RM_TYPES};${RE_RESULTS}" "result-${b}.bench" | tr '\n' ',' | sed -E 's/,$//')
+    R=$(sed -E "${RE_RESULT_LINES};${RE_RM_TYPES};${RE_RESULTS}" "${BENCHMARK_DIR}/result-${b}.bench" | tr '\n' ',' | sed -E 's/,$//')
     RESULT="${RESULT}\n${b},${R}"
   done
 
