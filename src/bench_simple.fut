@@ -1,84 +1,26 @@
 -- ==
 -- entry: half_d4 half_v4 half_t4 half_pure
 -- random input {         [100]f64 }
--- random input {         [150]f64 }
--- random input {         [200]f64 }
--- random input {         [250]f64 }
--- random input {         [300]f64 }
--- random input {         [350]f64 }
--- random input {         [400]f64 }
--- random input {         [450]f64 }
 -- random input {         [500]f64 }
 -- random input {       [1_000]f64 }
--- random input {       [1_250]f64 }
--- random input {       [1_500]f64 }
--- random input {       [1_750]f64 }
--- random input {       [2_000]f64 }
--- random input {       [2_500]f64 }
 -- random input {       [5_000]f64 }
--- random input {       [7_500]f64 }
 -- random input {      [10_000]f64 }
--- random input {      [25_000]f64 }
 -- random input {      [50_000]f64 }
--- random input {      [75_000]f64 }
 -- random input {     [100_000]f64 }
--- random input {     [125_000]f64 }
--- random input {     [150_000]f64 }
--- random input {     [175_000]f64 }
--- random input {     [200_000]f64 }
--- random input {     [250_000]f64 }
 -- random input {     [500_000]f64 }
--- random input {     [750_000]f64 }
 -- random input {   [1_000_000]f64 }
--- random input {   [2_500_000]f64 }
--- random input {   [5_000_000]f64 }
--- random input {   [7_500_000]f64 }
--- random input {  [10_000_000]f64 }
--- random input {  [25_000_000]f64 }
--- random input {  [50_000_000]f64 }
--- random input {  [75_000_000]f64 }
--- random input { [100_000_000]f64 }
 
 -- ==
 -- entry: euler_d4 euler_v4 euler_t4 euler_pure
--- random input {         [100]f64         [100]f64 }
--- random input {         [150]f64         [150]f64 }
--- random input {         [200]f64         [200]f64 }
--- random input {         [250]f64         [250]f64 }
--- random input {         [300]f64         [300]f64 }
--- random input {         [350]f64         [350]f64 }
--- random input {         [400]f64         [400]f64 }
--- random input {         [450]f64         [450]f64 }
--- random input {         [500]f64         [500]f64 }
--- random input {       [1_000]f64       [1_000]f64 }
--- random input {       [1_250]f64       [1_250]f64 }
--- random input {       [1_500]f64       [1_500]f64 }
--- random input {       [1_750]f64       [1_750]f64 }
--- random input {       [2_000]f64       [2_000]f64 }
--- random input {       [2_500]f64       [2_500]f64 }
--- random input {       [5_000]f64       [5_000]f64 }
--- random input {       [7_500]f64       [7_500]f64 }
--- random input {      [10_000]f64      [10_000]f64 }
--- random input {      [25_000]f64      [25_000]f64 }
--- random input {      [50_000]f64      [50_000]f64 }
--- random input {      [75_000]f64      [75_000]f64 }
--- random input {     [100_000]f64     [100_000]f64 }
--- random input {     [125_000]f64     [125_000]f64 }
--- random input {     [150_000]f64     [150_000]f64 }
--- random input {     [175_000]f64     [175_000]f64 }
--- random input {     [200_000]f64     [200_000]f64 }
--- random input {     [250_000]f64     [250_000]f64 }
--- random input {     [500_000]f64     [500_000]f64 }
--- random input {     [750_000]f64     [750_000]f64 }
--- random input {   [1_000_000]f64   [1_000_000]f64 }
--- random input {   [2_500_000]f64   [2_500_000]f64 }
--- random input {   [5_000_000]f64   [5_000_000]f64 }
--- random input {   [7_500_000]f64   [7_500_000]f64 }
--- random input {  [10_000_000]f64  [10_000_000]f64 }
--- random input {  [25_000_000]f64  [25_000_000]f64 }
--- random input {  [50_000_000]f64  [50_000_000]f64 }
--- random input {  [75_000_000]f64  [75_000_000]f64 }
--- random input { [100_000_000]f64 [100_000_000]f64 }
+-- random input {         [100]f64       [100]f64 }
+-- random input {         [500]f64       [500]f64 }
+-- random input {       [1_000]f64     [1_000]f64 }
+-- random input {       [5_000]f64     [5_000]f64 }
+-- random input {      [10_000]f64    [10_000]f64 }
+-- random input {      [50_000]f64    [50_000]f64 }
+-- random input {     [100_000]f64   [100_000]f64 }
+-- random input {     [500_000]f64   [500_000]f64 }
+-- random input {   [1_000_000]f64 [1_000_000]f64 }
 open import "vm_simple"
 
 module real = f64
