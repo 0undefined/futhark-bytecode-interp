@@ -27,7 +27,7 @@ local module type state = {
   val set : state -> idx -> u -> state
 
   -- | Return some value from state
-  val return : state -> u
+  val return [n] : [n]state -> [n]u
 }
 
 
@@ -39,8 +39,10 @@ module type interpreter = {
   --   Typically a sumtype with various payloads
   type instruction
 
-  -- | Evaluate the program, returning a new state
-  val eval [n] : state -> [n]instruction -> state
+  -- | Evaluate a flat segmented list of programs given some initial states
+  -- returning the evaluated list of states.
+  -- m is the number of programs in the list of instructions
+  val eval [m] [n] : [m]state -> [m]i64 -> [n]instruction -> [m]state
 }
 
 
