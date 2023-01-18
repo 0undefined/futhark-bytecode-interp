@@ -1,5 +1,5 @@
 -- ==
--- entry: half_d4 half_v4 half_t4 half_pure
+-- entry: half_pure half_d4 half_v4 half_t4
 -- random input {         [100]f64 }
 -- random input {         [500]f64 }
 -- random input {       [1_000]f64 }
@@ -11,7 +11,7 @@
 -- random input {   [1_000_000]f64 }
 
 -- ==
--- entry: euler_d4 euler_v4 euler_t4 euler_pure
+-- entry: euler_pure euler_d4 euler_v4 euler_t4
 -- random input {         [100]f64       [100]f64 }
 -- random input {         [500]f64       [500]f64 }
 -- random input {       [1_000]f64     [1_000]f64 }
