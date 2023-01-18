@@ -16,7 +16,6 @@ type instruction_simple 'idx 'a =
   -- memory stuff
   | #store idx -- Move value located in default storage member to `idx`
   | #load idx  -- Load value located at `idx` to default storage member
-  | #halt
 
 
 -- | An extended version of `instruction_simple`, with branching. It includes
