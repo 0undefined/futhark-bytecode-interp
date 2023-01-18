@@ -72,7 +72,7 @@ module interp_vector_4_memory (t: memtype) : interpreter_simple
   module v2 = cat_vector vector_1 vector_1
   module v4 = cat_vector v2 v2
 
-  type state = (i64, v4.vector u)
+  type state = v4.vector u
 
   type idx = i64
   let ra : idx = 0
@@ -86,9 +86,9 @@ module interp_vector_4_memory (t: memtype) : interpreter_simple
 
   type instruction = instruction_simple idx u
 
-  def init v                         = (0i64,v4.replicate v)
-  def get (s:state) (i:idx)          = v4.get i s.1
-  def set (pc,s) (i:idx) v           = (pc + 1i64, v4.set i v s)
+  def init v                    = v4.replicate v
+  def get (s:state) (i:idx)     = v4.get i s
+  def set s (i:idx) v           = v4.set i v s
   def return  [n] : [n]state -> [n]u = map (\s' -> get s' 0)
 
   def (+) (a: u) (b: u) = t.(a + b)
@@ -98,29 +98,29 @@ module interp_vector_4_memory (t: memtype) : interpreter_simple
   def sqrt (a: u)       = t.sqrt(a)
 
   def eval [m] [n] (s: [m]state) (pidx: [m]i64) (p: [n]instruction) =
-    let step (i: i64) (s:state) =
-      let i' = i64.(i + s.0) in
+    let step (pc: i64) (s: state) =
       let fstval : u = get s 0 in
-      match p[i']
-      case #add index -> (+) fstval (get s index) |> set s 0
-      case #sub index -> (-) fstval (get s index) |> set s 0
-      case #mul index -> (*) fstval (get s index) |> set s 0
-      case #div index -> (/) fstval (get s index) |> set s 0
-      case #sqrt      -> sqrt fstval              |> set s 0
+      match p[pc]
+      case #add index -> (i64.(pc + 1i64), (+) fstval (get s index) |> set s 0 )
+      case #sub index -> (i64.(pc + 1i64), (-) fstval (get s index) |> set s 0 )
+      case #mul index -> (i64.(pc + 1i64), (*) fstval (get s index) |> set s 0 )
+      case #div index -> (i64.(pc + 1i64), (/) fstval (get s index) |> set s 0 )
+      case #sqrt      -> (i64.(pc + 1i64), sqrt fstval              |> set s 0 )
 
-      case #cnst v    -> set s 0 v
-      case #store index -> set s index fstval
-      case #load  index -> get s index |> set s 0
+      case #cnst v      -> (i64.(pc + 1i64), set s 0 v)
+      case #store index -> (i64.(pc + 1i64), set s index fstval)
+      case #load  index -> (i64.(pc + 1i64), get s index |> set s 0)
 
-      case #halt -> s
+      case #halt -> (-1i64,s)
 
-    in loop s while any (\i ->
-      -- TODO: Create bug report, cant do p[..] != #halt
-      match p[ i64.(pidx[i] + s[i].0) ]
-      case #halt -> false
-      case _     -> true
-      ) (iota m)
-    do map2 step pidx s
+    let evaluate (pc: i64) (s: state) =
+      loop (pc, s) = (pc, s)
+      while pc != -1
+      do step pc s
+
+    in map2 evaluate pidx s
+       |> unzip
+       |> (.1)
 }
 
 
