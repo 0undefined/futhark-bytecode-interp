@@ -1,22 +1,29 @@
 #!/usr/bin/env sh
 
+# Automatically run `sneaker` on all entries in $FILE and collect them in a csv
+# file.
+
+# Parameters
 BACKEND=opencl
 FILE=bench_simple.fut
-
-SIMPLE_ENTRIES=( $(sed -E '/^entry/!d;s/^entry ([^ ]+) .*/\1/g' "${FILE}") )
 BENCHMARK_DIR=${BENCHMARK_DIR:-.benchmarks}
-
-NUM_ENTRIES=$((${#SIMPLE_ENTRIES[@]}))
-LAST_PRINTLEN=$(( 0 ))
-
 ! [ -d "${BENCHMARK_DIR}" ] && mkdir -p ${BENCHMARK_DIR}
 
+# Get entry names
+SIMPLE_ENTRIES=( $(sed -E '/^entry/!d;s/^entry ([^ ]+) .*/\1/g' "${FILE}") )
+
+NUM_ENTRIES=$((${#SIMPLE_ENTRIES[@]}))
+
+# Check if it can even be compiled
+futhark check $FILE || exit 1
+
+LAST_PRINTLEN=$(( 0 ))
 for i in "${!SIMPLE_ENTRIES[@]}"; do
   s=${SIMPLE_ENTRIES[$i]}
 
+  STATUS=$(printf "[%*i/$NUM_ENTRIES] $s\r" "${#NUM_ENTRIES}" "$((${i} + 1))")
   # Clear the line by writing spaces
   printf "%-${LAST_PRINTLEN}s\r" ""
-  STATUS=$(printf "[% ${#NUM_ENTRIES}i/$NUM_ENTRIES] $s\r" "$((${i} + 1))")
   LAST_PRINTLEN=${#STATUS}
   # Give the status counter
   echo -n "$STATUS"
