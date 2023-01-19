@@ -89,6 +89,8 @@ module type memtype = {
   val -: t -> t -> t
   val *: t -> t -> t
   val /: t -> t -> t
+  val ==: t -> t -> bool
+  val <: t -> t -> bool
 
   val sqrt : t -> t
 
