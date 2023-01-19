@@ -11,7 +11,7 @@ module interp_dynamic_memory (t: memtype) (P: {val numregs : i64}) : interpreter
 
   let length = P.numregs
   -- First one is the program counter
-  type state = (i64, [length]u)
+  type state = [length]u
 
   type idx = i64
   let ra : idx = 0
@@ -25,10 +25,10 @@ module interp_dynamic_memory (t: memtype) (P: {val numregs : i64}) : interpreter
 
   type instruction = instruction_simple idx u
 
-  def init v : state                 = (0, replicate length v)
-  def get  (s:state) (i:idx) : u     = s.1[i]
-  def set  ((p,s) : state) (i:idx) v = (p + 1i64, copy s with [i] = v)
-  def return [n] : [n]state -> [n]u  = map (\s' -> s'.1[0])
+  def init v : state                = replicate length v
+  def get  (s:state) (i:idx) : u    = s[i]
+  def set  (s: state) (i:idx) v     = copy s with [i] = v
+  def return [n] : [n]state -> [n]u = map (\s' -> s'[0])
 
   def (+) (a: u) (b: u) = t.(a + b)
   def (*) (a: u) (b: u) = t.(a * b)
@@ -36,29 +36,30 @@ module interp_dynamic_memory (t: memtype) (P: {val numregs : i64}) : interpreter
   def (-) (a: u) (b: u) = t.(a - b)
   def sqrt (a: u)       = t.sqrt(a)
 
-  def eval [m] [n] (s: [m]state) (pidx: [m]i64) (p: [n]instruction) : [m]state =
-    let step (i: i64) (s:state) =
-      --let s' = s[i]
-      let i' = i64.(i + s.0) in
+  def eval [m] [n] (s: [m]state) (pidx: [m]i64) (p: [n]instruction) =
+    let step (pc: i64) (s: state) =
       let fstval : u = get s 0 in
-      match p[i']
-      case #add index -> (+) fstval (get s index) |> set s 0
-      case #sub index -> (-) fstval (get s index) |> set s 0
-      case #mul index -> (*) fstval (get s index) |> set s 0
-      case #div index -> (/) fstval (get s index) |> set s 0
-      case #sqrt      -> sqrt fstval              |> set s 0
-      case #store index -> set s index fstval
-      case #load  index -> get s index |> set s 0
-      case #cnst v -> set s 0 v
-      case #halt   -> s
+      match p[pc]
+      case #add index -> (i64.(pc + 1i64), (+) fstval (get s index) |> set s 0 )
+      case #sub index -> (i64.(pc + 1i64), (-) fstval (get s index) |> set s 0 )
+      case #mul index -> (i64.(pc + 1i64), (*) fstval (get s index) |> set s 0 )
+      case #div index -> (i64.(pc + 1i64), (/) fstval (get s index) |> set s 0 )
+      case #sqrt      -> (i64.(pc + 1i64), sqrt fstval              |> set s 0 )
 
-    in loop s while any (\i ->
-      -- TODO: Create bug report, cant do p[..] != #halt
-      match p[ i64.(pidx[i] + s[i].0) ]
-      case #halt -> false
-      case _     -> true
-      ) (iota m)
-    do map2 step pidx s
+      case #cnst v      -> (i64.(pc + 1i64), set s 0 v)
+      case #store index -> (i64.(pc + 1i64), set s index fstval)
+      case #load  index -> (i64.(pc + 1i64), get s index |> set s 0)
+
+      case #halt -> (-1i64,s)
+
+    let evaluate (pc: i64) (s: state) =
+      loop (pc, s) = (pc, s)
+      while pc != -1
+      do step pc s
+
+    in map2 evaluate pidx s
+       |> unzip
+       |> (.1)
 }
 
 
@@ -130,8 +131,7 @@ module interp_tuple_4_memory (t: memtype) : interpreter_simple
 
   type u = t.t
 
-  let length = 4i64
-  type state = (i64, u, u, u, u)
+  type state = (u, u, u, u)
 
   type idx = #ra | #rb | #rc | #rd | #re | #rf | #rg | #rh
   let ra : idx = #ra
@@ -145,22 +145,22 @@ module interp_tuple_4_memory (t: memtype) : interpreter_simple
 
   type instruction = instruction_simple idx u
 
-  def init v           = (0i64,v,v,v,v)
-  def get  ((_,a,b,c,d):state) (r:idx) =
+  def init v           = (v,v,v,v)
+  def get  ((a,b,c,d):state) (r:idx) =
     match r
     case #ra -> a
     case #rb -> b
     case #rc -> c
     case #rd -> d
     case _   -> a
-  def set  ((pc,a,b,c,d):state) (r:idx) v =
+  def set  ((a,b,c,d):state) (r:idx) v =
     match r
-    case #ra -> (pc + 1, v,b,c,d)
-    case #rb -> (pc + 1, a,v,c,d)
-    case #rc -> (pc + 1, a,b,v,d)
-    case #rd -> (pc + 1, a,b,c,v)
-    case _   -> (pc + 1, v,b,c,d)
-  def return [n] : [n]state -> [n]u = map (.1)
+    case #ra -> (v,b,c,d)
+    case #rb -> (a,v,c,d)
+    case #rc -> (a,b,v,d)
+    case #rd -> (a,b,c,v)
+    case _   -> (v,b,c,d)
+  def return [n] : [n]state -> [n]u = map (.0)
 
   def (+) (a: u) (b: u) = t.(a + b)
   def (*) (a: u) (b: u) = t.(a * b)
@@ -169,27 +169,27 @@ module interp_tuple_4_memory (t: memtype) : interpreter_simple
   def sqrt (a: u)       = t.sqrt(a)
 
   def eval [m] [n] (s: [m]state) (pidx: [m]i64) (p: [n]instruction) =
-    let step (i: i64) (s:state) =
-      let i' = i64.(i + s.0) in
+    let step (pc: i64) (s: state) =
       let fstval : u = get s #ra in
-      match p[i']
-      case #add index -> (+) fstval (get s index) |> set s #ra
-      case #sub index -> (-) fstval (get s index) |> set s #ra
-      case #mul index -> (*) fstval (get s index) |> set s #ra
-      case #div index -> (/) fstval (get s index) |> set s #ra
-      case #sqrt      -> sqrt fstval              |> set s #ra
+      match p[pc]
+      case #add index -> (i64.(pc + 1i64), (+) fstval (get s index) |> set s #ra )
+      case #sub index -> (i64.(pc + 1i64), (-) fstval (get s index) |> set s #ra )
+      case #mul index -> (i64.(pc + 1i64), (*) fstval (get s index) |> set s #ra )
+      case #div index -> (i64.(pc + 1i64), (/) fstval (get s index) |> set s #ra )
+      case #sqrt      -> (i64.(pc + 1i64), sqrt fstval              |> set s #ra )
 
-      case #cnst v    -> set s #ra v
-      case #store index -> set s index fstval
-      case #load  index -> get s index |> set s #ra
+      case #cnst v      -> (i64.(pc + 1i64), set s #ra v)
+      case #store index -> (i64.(pc + 1i64), set s index fstval)
+      case #load  index -> (i64.(pc + 1i64), get s index |> set s #ra)
 
-      case #halt -> s
+      case #halt -> (-1i64,s)
 
-    in loop s while any (\i ->
-      -- TODO: Create bug report, cant do p[..] != #halt
-      match p[ i64.(pidx[i] + s[i].0) ]
-      case #halt -> false
-      case _     -> true
-      ) (iota m)
-    do map2 step pidx s
+    let evaluate (pc: i64) (s: state) =
+      loop (pc, s) = (pc, s)
+      while pc != -1
+      do step pc s
+
+    in map2 evaluate pidx s
+       |> unzip
+       |> (.1)
 }
