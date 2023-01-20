@@ -12,16 +12,39 @@ module interp_vector_8_branch_complex (t: memtype) : interpreter_branch_complex
   module v2 = cat_vector vector_1 vector_1
   module v4 = cat_vector v2 v2
   module v8 = cat_vector v4 v4
+  module v16 = cat_vector v8 v8
+  module v32 = cat_vector v16 v16
 
-  type frame =
-    { callstack: v4.vector i64 -- callstack[head] is the current PC
-    , head: i64                -- keeps track of the current frame in the callstack
+  type stack =
+    { mem:  v32.vector u -- callstack[head] is the current PC
+    , head: i64            -- keeps track of the current frame in the callstack
     }
+
   type state =
     { mem: v8.vector u
+    , pc: i64
+    , stack: stack
     , zf: bool                     -- zero flag
     , cf: bool                     -- carry flag
     }
+
+  def stack_init (v: u)       : stack = {mem = v32.replicate v, head = 0i64}
+  def stack_peek (s: state)   : u     = v32.get s.stack.head s.stack.mem
+
+  def stack_push (s: state) (v: u) : state =
+    if s.stack.head >= 32 then ??? else
+    let h = s.stack.head in
+    s with stack.mem  = v32.set h v s.stack.mem
+      with stack.head = h + 1
+      with pc         = s.pc + 1
+
+  def stack_pop (s: state) : (state, u) =
+    let h = s.stack.head in
+    let s'     = s with stack.head = h - 1
+    --             with pc = s.pc + 1
+    in
+    let retval = v32.get (h - 1) s.stack.mem --|> trace
+    in (s', retval)
 
   type idx = i64
   let ra : idx = 0
@@ -37,85 +60,69 @@ module interp_vector_8_branch_complex (t: memtype) : interpreter_branch_complex
 
   def init v : state =
     { mem       = v8.replicate v
+    , stack     = stack_init v
+    , pc        = 0
     , zf        = false
     , cf        = false
     }
 
   def get    (s: state) (i:idx)   : u     = v8.get i s.mem
   def set    (s: state) (i:idx) v : state = s with mem = v8.set i v s.mem
+                                              with pc  = s.pc + 1
 
-  def return [n] : [n]state -> [n]u     = map (\s' -> v8.get 0 s'.mem)
+  def return [n] : [n]state -> [n]u = map (\s' -> v8.get 0 s'.mem)
+
+  def reset_flags (s: state) : state =
+    s with zf = false with cf = false with pc = s.pc + 1
 
   def (+) (a: u) (b: u) = t.(a + b)
   def (*) (a: u) (b: u) = t.(a * b)
   def (/) (a: u) (b: u) = t.(a / b)
   def (-) (a: u) (b: u) = t.(a - b)
-  def sqrt (a: u)       = t.sqrt(a)
+  def sqrt (a: u)       = t.sqrt a
+  def to_i64 (a:u) = t.to_i64 a
 
   def (==) (a: u) (b: u) = t.(a == b)
-  def (<) (a: u) (b: u) = t.(a < b)
+  def (<) (a: u) (b: u)  = t.(a < b)
 
-  def pc_init (start: i64) : frame =
-    {callstack = v4.set 0 start (v4.replicate 0), head = 0}
-
-  def pc_get (cs: frame) : i64 =
-    v4.get cs.head cs.callstack
-
-  def pc_jmp (cs: frame) (offset: i64) : frame =
-    if cs.head >= 3 then ??? else
-      let offset' = i64.(pc_get cs + offset)
-      in cs with callstack = v4.set cs.head (pc_get cs |> i64.((+) offset)) cs.callstack
-            with head = i64.(cs.head + 1)
-            with callstack = v4.set cs.head offset' cs.callstack
-
-  def reset_flags (s: state) : state =
-    s with zf = false with cf = false
-
-  def jmp (cs: frame) (offset: i64) (s: state) : (frame, state) =
-    (pc_jmp cs offset, reset_flags s)
-
-  def pc_inc (cs: frame) : frame =
-    cs with callstack = v4.set cs.head (pc_get cs |> i64.((+) 1)) cs.callstack
-
-  def pc_nil (cs: frame) : frame =
-    cs with callstack = v4.set cs.head (-1i64) cs.callstack
+  def jmp (s: state) (offset: i64) = s with pc = offset
 
   def eval [m] [n] (s: [m]state) (pidx: [m]i64) (p: [n]instruction) =
 
-    let step (cs: frame) (s: state) : (frame, state) =
+    let step (s: state) : state =
       let fstval : u = get s ra in
-      match p[pc_get cs]
-      case #add index   -> (pc_inc cs, (+) fstval (get s index) |> set s ra)
-      case #sub index   -> (pc_inc cs, (-) fstval (get s index) |> set s ra)
-      case #mul index   -> (pc_inc cs, (*) fstval (get s index) |> set s ra)
-      case #div index   -> (pc_inc cs, (/) fstval (get s index) |> set s ra)
-      case #sqrt        -> (pc_inc cs, sqrt fstval              |> set s ra)
+      match p[s.pc]
+      case #add index   -> (+) fstval (get s index) |> set s ra
+      case #sub index   -> (-) fstval (get s index) |> set s ra
+      case #mul index   -> (*) fstval (get s index) |> set s ra
+      case #div index   -> (/) fstval (get s index) |> set s ra
+      case #sqrt        -> sqrt fstval              |> set s ra
 
-      case #cnst v      -> (pc_inc cs, set s ra v)
+      case #cnst v      -> set s ra v
 
-      case #store index -> (pc_inc cs, set s index fstval)
-      case #load  index -> (pc_inc cs, get s index |> set s ra)
+      case #store index -> set s index fstval
+      case #load  index -> get s index |> set s ra
+      case #push  index -> stack_push s (get s index)
+      case #pop         -> let (s', v) = stack_pop s in set s' ra v
 
       -- Jump around!
-      case #cmp   index  -> let arg = (get s index) in
-                            (pc_inc cs, { mem = s.mem
-                                        , zf = (==)  fstval arg
-                                        , cf = (<)   fstval arg
-                                        })
+      case #cmp   index  -> let arg = get s index in
+                            s with zf = (==) fstval arg
+                              with cf = (<)  fstval arg
+                              with pc = i64.(s.pc + 1)
 
-      case #jmp   offset -> (pc_jmp cs offset, s)
-      case #jmplt offset -> if s.cf         then jmp cs offset s else (pc_inc cs, reset_flags s)
-      case #jmpgt offset -> if s.cf && s.zf then jmp cs offset s else (pc_inc cs, reset_flags s)
-      case #jmpeq offset -> if s.zf         then jmp cs offset s else (pc_inc cs, reset_flags s)
+      case #jmp   offset -> jmp s offset
+      case #jmpreg index -> jmp s (get s index |> t.to_i64)
+      case #jmplt offset -> if s.cf            then jmp s offset else reset_flags s
+      case #jmpgt offset -> if !(s.cf || s.zf) then jmp s offset else reset_flags s
+      case #jmpeq offset -> if s.zf            then jmp s offset else reset_flags s
 
-      case #halt         -> (pc_nil cs, s)
+      case #halt         -> s with pc = -1
 
-    let evaluate (cs: frame) (s: state) =
-      loop (cs, s) = (cs, s)
-      while pc_get cs != -1
-      do step cs s
+    let evaluate (s: state) =
+      loop s = s
+      while s.pc != -1
+      do step s
 
-    in map2 evaluate (map pc_init pidx) s
-       |> unzip
-       |> (.1)
+    in map evaluate (map2 (\(s':state) pc -> s' with pc = pc) s pidx)
 }
