@@ -32,14 +32,19 @@ type instruction_jump_long 'idx 'a =
 
   | #store idx
   | #load idx
+  | #push idx
+  | #pop
 
-  | #cmp   idx -- Set ZF and CF flags in state
-               -- ZF iff. r[#] = r[idx]
-               -- CF iff. r[#] < r[idx]
-  | #jmp   i64 -- Add i64 to PC
-  | #jmplt i64 -- Add i64 to PC if condition is true
-  | #jmpgt i64 -- Add i64 to PC if condition is true
-  | #jmpeq i64 -- Add i64 to PC if condition is true
+  | #cmp    idx -- Set ZF and CF flags in state
+                -- ZF iff. r[#] = r[idx]
+                -- CF iff. r[#] < r[idx]
+  | #jmp    i64 -- Add i64 to PC
+  | #jmplt  i64 -- Add i64 to PC if condition is true
+  | #jmpgt  i64 -- Add i64 to PC if condition is true
+  | #jmpeq  i64 -- Add i64 to PC if condition is true
+  | #jmpreg idx -- jump to offset in reg
+  ------| #call
+  ------| #return
   | #halt
 
 
