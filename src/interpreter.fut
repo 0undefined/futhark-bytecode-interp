@@ -92,7 +92,8 @@ module type memtype = {
   val ==: t -> t -> bool
   val <: t -> t -> bool
 
-  val sqrt : t -> t
+  val sqrt: t -> t
+  val to_i64: t -> i64
 
   val i32: i32 -> t
   val i64: i64 -> t
