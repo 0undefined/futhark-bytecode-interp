@@ -73,7 +73,10 @@ type instruction_jump 'idx 'a =
 
   | #store idx
   | #load  idx
+  | #push  idx
+  | #pop
 
-  | #jmp   i64
-  | #jmplt idx i64
+  | #jmp    i64
+  | #jmpreg idx
+  | #jmplt  idx i64
   | #halt
