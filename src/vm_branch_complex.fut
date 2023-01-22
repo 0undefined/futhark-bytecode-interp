@@ -71,20 +71,30 @@ module interp_vector_8_branch_complex (t: memtype) : interpreter_branch_complex
 
   def return [n] : [n]state -> [n]u = map (\s' -> v8.get 0 s'.mem)
 
-  def reset_flags (s: state) : state =
-    s with zf = false with cf = false with pc = s.pc + 1
-
   def (+) (a: u) (b: u) = t.(a + b)
   def (*) (a: u) (b: u) = t.(a * b)
   def (/) (a: u) (b: u) = t.(a / b)
   def (-) (a: u) (b: u) = t.(a - b)
   def sqrt (a: u)       = t.sqrt a
-  def to_i64 (a:u) = t.to_i64 a
+  def to_i64 (a:u)      = t.to_i64 a
+  --def from_i64 (a:i64)  = t.from_i64 a
+  --def i64 (a:i64)     = t.i64 a
 
   def (==) (a: u) (b: u) = t.(a == b)
   def (<) (a: u) (b: u)  = t.(a < b)
 
-  def jmp (s: state) (offset: i64) = s with pc = offset
+  def reset_flags (s: state) : state =
+    s with zf = false with cf = false with pc = i64.(s.pc + 1)
+
+  def jmp (s: state) (offset: i64) = reset_flags s with pc = offset
+
+  def call (s: state) (offset: i64) =
+    let s' = stack_push s (i64.(s.pc + 1i64) |> t.i64)
+    in jmp s' offset
+
+  def ret  (s: state) =
+    let (s', pc) = stack_pop s
+    in jmp s' (t.to_i64 pc)
 
   def eval [m] [n] (s: [m]state) (pidx: [m]i64) (p: [n]instruction) =
 
@@ -115,6 +125,9 @@ module interp_vector_8_branch_complex (t: memtype) : interpreter_branch_complex
       case #jmplt offset -> if s.cf            then jmp s offset else reset_flags s
       case #jmpgt offset -> if !(s.cf || s.zf) then jmp s offset else reset_flags s
       case #jmpeq offset -> if s.zf            then jmp s offset else reset_flags s
+
+      case #call offset -> call s offset
+      case #return      -> ret s
 
       case #halt         -> s with pc = -1
 
