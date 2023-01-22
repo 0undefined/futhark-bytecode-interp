@@ -32,14 +32,13 @@ module interp_vector_8_branch_complex (t: memtype) : interpreter_branch_complex
   def stack_peek (s: state)   : u     = v32.get s.stack.head s.stack.mem
 
   def stack_push (s: state) (v: u) : state =
-    if s.stack.head >= 32 then ??? else
-    let h = s.stack.head in
+    let h = assert (s.stack.head < 32) s.stack.head in
     s with stack.mem  = v32.set h v s.stack.mem
       with stack.head = h + 1
       with pc         = s.pc + 1
 
   def stack_pop (s: state) : (state, u) =
-    let h = s.stack.head in
+    let h = assert (s.stack.head > 0) s.stack.head in
     let s'     = s with stack.head = h - 1
     --             with pc = s.pc + 1
     in
