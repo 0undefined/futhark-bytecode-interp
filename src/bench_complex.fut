@@ -108,6 +108,52 @@ let fibprog_simple : []vm.instruction = vm.([
     ])
 
 
+let fibprog_tail : []vm.instruction = vm.([
+  -- int a = 1;
+  -- int b = 1;
+  -- do {
+  --   int s = a;
+  --   a = b;
+  --   b += s;
+  --   n--;
+  -- } while (n > 0);
+  -- return a;
+  -- BEGIN
+    #store   re   --  0 -- rd = n
+  , #cnst    1    --  1 -- set rb and rc to 1
+  , #store   rb   --  2 -- a = rb
+  , #store   rc   --  3 -- b = rc
+
+  -- DO {
+  -- s = a;
+  , #load    rb   --  4 -- s = a
+  , #store   rd   --  5 -- s = rd
+
+  -- a = b;
+  , #load    rc   --  6 -- a = b
+  , #store   rb   --  7
+
+  -- b += s;
+  , #load    rc   --  8 -- b += s
+  , #add     rd   --  9 --
+  , #store   rc   -- 10 --
+
+  -- n -= 1;
+  , #load    re   -- 11 -- n = n-1
+  , #subi    1    -- 12
+  , #store   re   -- 13
+
+  -- } WHILE (N > 0);
+  , #cmpi    0    -- 14
+  , #jmpgt   4    -- 15
+
+
+  -- RETURN
+  , #load    rb   -- 16
+  , #return       -- 21 -- jump to return address
+])
+
+
 entry half_branch_complex [n] (a: [n]f64) : [n]f64 =
   let prog (v: f64) : []vm.instruction = vm.(
     [ #cnst  v
@@ -243,6 +289,23 @@ entry fib_simple_branch_complex [n] (a: [n]f64) : [n]f64 =
   let plen = length (prog 0)
   let prog_idx = map (\i -> i * plen + length stdprog) (iota n) in
   let programs : []vm.instruction = stdprog ++ (map prog prog_idx |> flatten)
+  in
+  let states   : [n]vm.state = vm.init 0
+      |> replicate n
+      |> map2 (\v s -> vm.set s vm.ra v) (map (\x -> x * 1 |> f64.ceil) a) in
+  vm.eval states prog_idx programs |> vm.return
+
+
+entry fib_tail_branch_complex [n] (a: [n]f64) : [n]f64 =
+  let stdprog = fibprog_tail in
+  let prog : []vm.instruction = vm.(
+    [ -- immediately call fib with `ra`
+      #call 0
+    , #halt
+    ]) in
+  let plen = length prog
+  let prog_idx = map (\i -> i * plen + length stdprog) (iota n) in
+  let programs : []vm.instruction = stdprog ++ (flatten <| replicate n prog)
   in
   let states   : [n]vm.state = vm.init 0
       |> replicate n
