@@ -32,7 +32,7 @@ module interp_vector_8_branch_complex (t: memtype) : interpreter_branch_complex
   def stack_peek (s: state)   : u     = v32.get s.stack.head s.stack.mem
 
   def stack_push (s: state) (v: u) : state =
-    let h = assert (s.stack.head < 32) s.stack.head in
+    let h = assert (s.stack.head + 1 < 32) s.stack.head in
     s with stack.mem  = v32.set h v s.stack.mem
       with stack.head = h + 1
       with pc         = s.pc + 1
@@ -101,13 +101,17 @@ module interp_vector_8_branch_complex (t: memtype) : interpreter_branch_complex
     let step (s: state) : state =
       let fstval : u = get s ra in
       match p[s.pc]
-      case #add index   -> (+) fstval (get s index) |> set s ra
-      case #sub index   -> (-) fstval (get s index) |> set s ra
-      case #mul index   -> (*) fstval (get s index) |> set s ra
-      case #div index   -> (/) fstval (get s index) |> set s ra
-      case #sqrt        -> sqrt fstval              |> set s ra
+      case #add  index -> (+) fstval (get s index) |> set s ra
+      case #sub  index -> (-) fstval (get s index) |> set s ra
+      case #mul  index -> (*) fstval (get s index) |> set s ra
+      case #div  index -> (/) fstval (get s index) |> set s ra
+      case #addi v     -> (+) fstval v             |> set s ra
+      case #subi v     -> (-) fstval v             |> set s ra
+      case #muli v     -> (*) fstval v             |> set s ra
+      case #divi v     -> (/) fstval v             |> set s ra
+      case #sqrt       -> sqrt fstval              |> set s ra
 
-      case #cnst v      -> set s ra v
+      case #cnst v     -> set s ra v
 
       case #store index -> set s index fstval
       case #load  index -> get s index |> set s ra
@@ -115,10 +119,14 @@ module interp_vector_8_branch_complex (t: memtype) : interpreter_branch_complex
       case #pop         -> let (s', v) = stack_pop s in set s' ra v
 
       -- Jump around!
-      case #cmp   index  -> let arg = get s index in
-                            s with zf = (==) fstval arg
-                              with cf = (<)  fstval arg
-                              with pc = i64.(s.pc + 1)
+      case #cmp index -> let arg = get s index in
+                         s with zf = (==) fstval arg
+                           with cf = (<)  fstval arg
+                           with pc = i64.(s.pc + 1)
+
+      case #cmpi v -> s with zf = (==) fstval v
+                        with cf = (<)  fstval v
+                        with pc = i64.(s.pc + 1)
 
       case #jmp   offset -> jmp s offset
       case #jmpreg index -> jmp s (get s index |> t.to_i64)
