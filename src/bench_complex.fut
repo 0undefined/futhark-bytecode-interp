@@ -148,7 +148,6 @@ entry fib_branch_complex [n] (a: [n]f64) : [n]f64 =
     , #push rd       -- 17 -- push fib(n-1)
 
     -- Calculate Fib (n-2)
-    --, #pop           -- 17 -- pop n into ra
     , #cnst   2      -- 18 --
     , #store rc      -- 19 --
     , #load  rb      -- 20
@@ -173,11 +172,7 @@ entry fib_branch_complex [n] (a: [n]f64) : [n]f64 =
 
     -- return1:
     , #cnst 1        -- 35
-    , #store rb      -- 36
-    , #pop           -- 37 -- pops to ra
-    , #store  rc     -- 38 -- save result in rc
-    , #load   rb     -- 39 -- load result
-    , #jmpreg rc     -- 40 -- jump to return address
+    , #return        -- 36 -- jump to return address
     ]) in
   let prog (progstart:i64) : [6]vm.instruction = vm.(
     [ #store rb
