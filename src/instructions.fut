@@ -43,8 +43,8 @@ type instruction_jump_long 'idx 'a =
   | #jmpgt  i64 -- Add i64 to PC if condition is true
   | #jmpeq  i64 -- Add i64 to PC if condition is true
   | #jmpreg idx -- jump to offset in reg
-  ------| #call
-  ------| #return
+  | #call   i64
+  | #return
   | #halt
 
 
