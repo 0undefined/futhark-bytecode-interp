@@ -1,7 +1,7 @@
 open import "interpreter"
 
 
-module interp_vector_8_branch_complex (t: memtype) : interpreter_branch_complex
+module interp_vector_8_branch (t: memtype) : interpreter_branch
   with u = t.t
   with idx = i64
   = {
@@ -17,15 +17,13 @@ module interp_vector_8_branch_complex (t: memtype) : interpreter_branch_complex
 
   type stack =
     { mem:  v32.vector u -- callstack[head] is the current PC
-    , head: i64            -- keeps track of the current frame in the callstack
+    , head: i64          -- keeps track of the current frame in the callstack
     }
 
   type state =
     { mem: v8.vector u
     , pc: i64
     , stack: stack
-    , zf: bool                     -- zero flag
-    , cf: bool                     -- carry flag
     }
 
   def stack_init (v: u)       : stack = {mem = v32.replicate v, head = 0i64}
@@ -55,14 +53,12 @@ module interp_vector_8_branch_complex (t: memtype) : interpreter_branch_complex
   let rg : idx = 6
   let rh : idx = 7
 
-  type instruction = instruction_jump_long idx u
+  type instruction = instruction_jump idx u
 
   def init v : state =
     { mem       = v8.replicate v
     , stack     = stack_init v
     , pc        = 0
-    , zf        = false
-    , cf        = false
     }
 
   def get    (s: state) (i:idx)   : u     = v8.get i s.mem
@@ -77,24 +73,11 @@ module interp_vector_8_branch_complex (t: memtype) : interpreter_branch_complex
   def (-) (a: u) (b: u) = t.(a - b)
   def sqrt (a: u)       = t.sqrt a
   def to_i64 (a:u)      = t.to_i64 a
-  --def from_i64 (a:i64)  = t.from_i64 a
-  --def i64 (a:i64)     = t.i64 a
 
   def (==) (a: u) (b: u) = t.(a == b)
   def (<) (a: u) (b: u)  = t.(a < b)
 
-  def reset_flags (s: state) : state =
-    s with zf = false with cf = false with pc = i64.(s.pc + 1)
-
-  def jmp (s: state) (offset: i64) = reset_flags s with pc = offset
-
-  def call (s: state) (offset: i64) =
-    let s' = stack_push s (i64.(s.pc + 1i64) |> t.i64)
-    in jmp s' offset
-
-  def ret  (s: state) =
-    let (s', pc) = stack_pop s
-    in jmp s' (t.to_i64 pc)
+  def jmp (s: state) (offset: i64) = s with pc = offset
 
   def eval [m] [n] (s: [m]state) (pidx: [m]i64) (p: [n]instruction) =
 
@@ -102,16 +85,10 @@ module interp_vector_8_branch_complex (t: memtype) : interpreter_branch_complex
       let fstval : u = get s ra in
       match p[s.pc]
       case #add  index -> (+) fstval (get s index) |> set s ra
-      case #sub  index -> (-) fstval (get s index) |> set s ra
       case #mul  index -> (*) fstval (get s index) |> set s ra
-      case #div  index -> (/) fstval (get s index) |> set s ra
-      case #addi v     -> (+) fstval v             |> set s ra
-      case #subi v     -> (-) fstval v             |> set s ra
-      case #muli v     -> (*) fstval v             |> set s ra
-      case #divi v     -> (/) fstval v             |> set s ra
       case #sqrt       -> sqrt fstval              |> set s ra
 
-      case #cnst v     -> set s ra v
+      case #cnst v -> set s ra v
 
       case #store index -> set s index fstval
       case #load  index -> get s index |> set s ra
@@ -119,25 +96,11 @@ module interp_vector_8_branch_complex (t: memtype) : interpreter_branch_complex
       case #pop         -> let (s', v) = stack_pop s in set s' ra v
 
       -- Jump around!
-      case #cmp index -> let arg = get s index in
-                         s with zf = (==) fstval arg
-                           with cf = (<)  fstval arg
-                           with pc = i64.(s.pc + 1)
+      case #jmp    offset     -> jmp s offset
+      case #jmpreg idx        -> jmp s (get s idx |> t.to_i64)
+      case #jmplt  idx offset -> if (<) fstval (get s idx) then jmp s offset else s with pc = i64.(s.pc + 1)
 
-      case #cmpi v -> s with zf = (==) fstval v
-                        with cf = (<)  fstval v
-                        with pc = i64.(s.pc + 1)
-
-      case #jmp   offset -> jmp s offset
-      case #jmpreg index -> jmp s (get s index |> t.to_i64)
-      case #jmplt offset -> if s.cf            then jmp s offset else reset_flags s
-      case #jmpgt offset -> if !(s.cf || s.zf) then jmp s offset else reset_flags s
-      case #jmpeq offset -> if s.zf            then jmp s offset else reset_flags s
-
-      case #call offset -> call s offset
-      case #return      -> ret s
-
-      case #halt         -> s with pc = -1
+      case #halt -> s with pc = -1
 
     let evaluate (s: state) =
       loop s = s
