@@ -23,21 +23,35 @@ type instruction_simple 'idx 'a =
 -- | seperate comparison instructions and a diverse set of conditional jumps.
 type instruction_jump_long 'idx 'a =
   -- Common instructions with `instruction_simple`
-    #add idx
-  | #sub idx
-  | #mul idx
-  | #div idx
+  -- Adds default register and register at `idx`; stores result in default reg.
+    #add  idx
+  | #sub  idx
+  | #mul  idx
+  | #div  idx
+  -- Adds default register and an immediate value; stores result in default reg.
+  | #addi a
+  | #subi a
+  | #muli a
+  | #divi a
+  -- Yields square root of the value in the default reg.
   | #sqrt
+  -- Load an immediate value in the default reg.
   | #cnst a
 
+  -- Copy value in default reg. to register at `idx`
   | #store idx
+  -- Copy value in register at `idx` to default reg.
   | #load idx
+  -- Push value in register at `idx` to top of the stack
   | #push idx
+  -- Pop value at top of the stack to default register
   | #pop
 
   | #cmp    idx -- Set ZF and CF flags in state
                 -- ZF iff. r[#] = r[idx]
                 -- CF iff. r[#] < r[idx]
+  | #cmpi   a -- same thing, but against an immediate value
+
   | #jmp    i64 -- Add i64 to PC
   | #jmplt  i64 -- Add i64 to PC if condition is true
   | #jmpgt  i64 -- Add i64 to PC if condition is true
