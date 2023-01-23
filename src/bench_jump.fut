@@ -157,6 +157,48 @@ entry half_branch_jump [n] (a: [n]f64) : [n]f64 =
   vm.eval states starting_indices programs |> vm.return
 
 
+entry jump_fac [n] (a: [n]f64) : [n]f64 =
+  let prog (offset: i64): []vm.instruction = vm.(
+    -- f (n) = !n
+    -- int factorial(int n) {
+    --  int a = 1;
+    --  if (n < a) return a;
+    --  do {
+    --    a *= n;
+    --    n--;
+    --  } while (n > 0);
+    --   return a;
+    -- }
+    [ #store rc     --  0 -- store  n in rb
+
+    , #cnst   1     --  1 --
+    , #store rb     --  2 -- a = 1
+    , #store rd     --  3 -- alias rd = 1
+    , #cnst (-1)    --  4
+    , #store re     --  5 -- alias rd = 1
+
+    , #load  rc     --  6 -- load is necessary when we jump to here
+    , #jmplt rd (offset + 14i64) --  7 -- return 1
+
+    , #mul   rb     --  8 --
+    , #store rb     --  9 --
+
+    , #load  rc     -- 10 -- n--;
+    , #add   re     -- 11 --
+    , #store rc     -- 12 --
+
+    , #jmp (offset + (6i64)) -- 13 -- jmp START
+
+    -- END
+    , #load  rb     -- 14
+    , #halt         -- 15
+    ])
+  in
+
+  let (states, starting_indices, programs) = prog_state_init [] prog a in
+  vm.eval states starting_indices programs |> vm.return
+
+
 entry fib_simple_branch_complex [n] (a: [n]f64) : [n]f64 =
   let stdlib = copy fibprog in
   let prog (progstart:i64) : [6]vm.instruction = vm.(
