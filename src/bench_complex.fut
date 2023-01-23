@@ -17,7 +17,7 @@ module real = f64
 module vm = interp_vector_8_branch_complex real
 
 
-def init_states [n] (vv: [n]real.t) : [n]vm.state =
+def init_states [n] vv =
   replicate n (vm.init 0) |> map2 (\v s -> vm.set s vm.ra v) vv
 
 
