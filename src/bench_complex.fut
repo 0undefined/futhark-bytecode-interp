@@ -181,18 +181,7 @@ let fibprog_tail : []vm.instruction = vm.([
 ])
 
 
-entry half_simplified_branch_complex [n] (a: [n]f64) : [n]f64 =
-  let prog (_: i64) : []vm.instruction = vm.(
-    [ #muli  0.5f64
-    , #halt
-    ])
-  in
-
-  let (states, starting_indices, programs) = prog_state_init [] prog a in
-  vm.eval states starting_indices programs |> vm.return
-
-
-entry half_branch_complex [n] (a: [n]f64) : [n]f64 =
+entry complex_half [n] (a: [n]f64) : [n]f64 =
   let prog (_: i64) : []vm.instruction = vm.(
     [ #store rb
     , #cnst  0.5f64
@@ -205,33 +194,51 @@ entry half_branch_complex [n] (a: [n]f64) : [n]f64 =
   vm.eval states starting_indices programs |> vm.return
 
 
-entry fac_branch_complex [n] (a: [n]f64) : [n]f64 =
+entry complex_half_simplified [n] (a: [n]f64) : [n]f64 =
+  let prog (_: i64) : []vm.instruction = vm.(
+    [ #muli  0.5f64
+    , #halt
+    ])
+  in
+
+  let (states, starting_indices, programs) = prog_state_init [] prog a in
+  vm.eval states starting_indices programs |> vm.return
+
+
+entry complex_fac [n] (a: [n]f64) : [n]f64 =
   let prog (offset: i64): []vm.instruction = vm.(
-    -- f (x) = !x  -- assume x is initially in ra
-    [ #store rc    -- store  x in rb -- counter
+    -- f (n) = !n
+    -- int factorial(int n) {
+    --  int a = 1;
+    --  if (n < a) return a;
+    --  do {
+    --    a *= n;
+    --    n--;
+    --  } while (n > 0);
+    --   return a;
+    -- }
+    [ #store rc     --  0 -- store  n in rb
 
-    , #cnst  1f64   -- store 1 in rc
-    , #store rb
-    , #store rd     -- sum
+    , #cnst   1     --  1 --
+    , #store rb     --  2 -- a = 1
+    , #store rd     --  3 -- alias rd = 1
 
-    , #load  rb      -- if x < 1 then jmp END
-    , #cmp   rc
-    , #jmpgt (offset + 14i64)
-                     -- else
+    , #load  rc     --  4 -- load is necessary when we jump to here
+    , #cmp   rd     --  5 --
+    , #jmplt (offset + 13i64) --  6 -- return 1
 
-    , #load  rc      -- counter -= 1
-    , #mul   rd      -- sum *= counter
-    , #store rd
+    , #mul   rb     --  7 --
+    , #store rb     --  8 --
 
-    , #load  rc      --
-    , #sub   rb
-    , #store rc      --
+    , #load  rc     --  9 -- n--;
+    , #sub   rd     -- 10 --
+    , #store rc     -- 11 --
 
-    , #jmp (offset + (4i64)) -- jmp START
+    , #jmp (offset + (4i64)) -- 12 -- jmp START
 
     -- END
-    , #load rd
-    , #halt
+    , #load  rb     -- 13
+    , #halt         -- 14
     ])
   in
 
