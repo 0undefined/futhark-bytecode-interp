@@ -33,13 +33,81 @@ def prog_state_init [n] [m] (stdlib: []vm.instruction) (p: i64 -> [m]vm.instruct
     (states, starting_indices, programs)
 
 
+
+
+-- Same as fibprog, but without immediates and call/return
+-- This is almost identical to the one in bench_jump.fut
+-- In F#:
+-- let rec fib = function
+--   | 0 | 1 -> 1
+--   | n     -> fib (n-1) + fib (n-2)
+let fibprog : []vm.instruction = vm.([
+  -- fib:
+    #store rb      --  0 -- assume ra is input, `n` -- move n to rb
+  , #cnst   2      --  1 --
+  , #cmp   rb      --  2 --
+  , #jmpgt 35      --  3 -- if 2 > n -> return
+
+  , #push  rb      --  4 -- save n on the stack        -- stack +1
+  , #cnst   1      --  5 --
+  , #store rc      --  6 --
+  , #load  rb      --  7 --
+  , #sub   rc      --  8 -- ra = n - 1
+
+  -- Calculate Fib (n-1)
+  , #store rd      --  9 -- rd = n-1
+  , #cnst  14      -- 10 -- jump back to fib(n-2)
+  , #push  ra      -- 11
+  , #load  rd      -- 12
+  , #jmp    0      -- 13 -- ra = fib (n-1)
+
+  , #store rd      -- 14 -- rd = fib(n-1)
+  , #pop           -- 15 -- ra = n
+  , #store rb      -- 16 -- rb = n
+  , #push  rd      -- 17 -- push fib(n-1)
+
+  -- Calculate Fib (n-2)
+  , #cnst   2      -- 18 --
+  , #store rc      -- 19 --
+  , #load  rb      -- 20
+  , #sub   rc      -- 21 -- ra = n - 2
+
+  , #store rd      -- 22 -- rd = n - 2
+  , #cnst  27      -- 23 -- jump back to fib(n-1) + fib(n-2)
+  , #push  ra      -- 24 -- pc + 2
+  , #load  rd      -- 25 -- ra = (n-2)
+  , #jmp    0      -- 26 -- ra = fib (n-2)
+
+  , #store rb      -- 27 -- rb = fib (n - 2)
+  , #pop           -- 28 -- ra = fib (n - 1)
+  , #add   rb      -- 29 -- rb = fib (n - 1) + fib (n - 2)
+  , #store rb      -- 30 --
+
+  -- return:
+  , #pop           -- 31 -- pops to ra
+  , #store  rc     -- 32 -- save result in rc
+  , #load   rb     -- 33 -- load result
+  , #jmpreg rc     -- 34 -- jump to return address
+
+  -- return1:
+  , #cnst    1     -- 35
+  , #store  rb     -- 36
+  , #pop           -- 37 -- pops to ra
+  , #store  rc     -- 38 -- save result in rc
+  , #load   rb     -- 39 -- load result
+  , #jmpreg rc     -- 40 -- jump to return address
+  ])
+
+
+-- Same as fibprog, but uses the simpler instructions to abbreviate trivial
+-- stuff.
 -- fib(n) = fib(n - 1) + fib(n - 2)
-let fibprog : []vm.instruction = vm.(
+let fibprog_simplified : []vm.instruction = vm.(
   [ -- fib:
     #cmpi  2      --  0 --
   , #jmplt 16     --  1 -- if n < 2 -> return1
 
-  , #push  ra     --  2 -- save n on the stack        -- stack +1
+  , #push  ra     --  2 -- save n on the stack
   , #subi  1      --  3 -- ra = n - 1
 
   -- Calculate Fib (n-1)
@@ -54,7 +122,7 @@ let fibprog : []vm.instruction = vm.(
   , #load  rb     --  9
   , #subi   2     -- 10 -- ra = n - 2
 
-  , #call    0    -- 11 -- ra = fib (n-2)
+  , #call   0    -- 11 -- ra = fib (n-2)
 
   , #store rb     -- 12 -- rb = fib (n - 2)
   , #pop          -- 13 -- ra = fib (n - 1)
@@ -62,68 +130,9 @@ let fibprog : []vm.instruction = vm.(
   , #return       -- 15
 
   -- return1:
-  , #cnst 1       -- 16
+  , #cnst   1     -- 16
   , #return       -- 17 -- jump to return address
 ])
-
-
--- Same as fibprog, but without immediates and call/return
-let fibprog_simple : []vm.instruction = vm.([
-    -- fib:
-      #store rb      --  0 -- assume ra is input, `n` -- move n to rb
-    , #cnst   2      --  1 --
-    , #cmp   rb      --  2 --
-    , #jmpgt 35      --  3 -- if 2 > n -> return
-
-    , #push  rb      --  4 -- save n on the stack        -- stack +1
-    , #cnst   1      --  5 --
-    , #store rc      --  6 --
-    , #load  rb      --  7 --
-    , #sub   rc      --  8 -- ra = n - 1
-
-    -- Calculate Fib (n-1)
-    , #store rd      --  9 -- rd = n-1
-    , #cnst  14      -- 10 -- jump back to fib(n-2)
-    , #push  ra      -- 11
-    , #load  rd      -- 12
-    , #jmp    0      -- 13 -- ra = fib (n-1)
-
-    , #store rd      -- 14 -- rd = fib(n-1)
-    , #pop           -- 15 -- ra = n
-    , #store rb      -- 16 -- rb = n
-    , #push rd       -- 17 -- push fib(n-1)
-
-    -- Calculate Fib (n-2)
-    , #cnst   2      -- 18 --
-    , #store rc      -- 19 --
-    , #load  rb      -- 20
-    , #sub   rc      -- 21 -- ra = n - 2
-
-    , #store rd      -- 22 -- rd = n - 2
-    , #cnst  27      -- 23 -- jump back to fib(n-1) + fib(n-2)
-    , #push  ra      -- 24 -- pc + 2
-    , #load  rd      -- 25 -- ra = (n-2)
-    , #jmp    0      -- 26 -- ra = fib (n-2)
-
-    , #store rb      -- 27 -- rb = fib (n - 2)
-    , #pop           -- 28 -- ra = fib (n - 1)
-    , #add   rb      -- 29 -- rb = fib (n - 1) + fib (n - 2)
-    , #store rb      -- 30 --
-
-    -- return:
-    , #pop           -- 31 -- pops to ra
-    , #store  rc     -- 32 -- save result in rc
-    , #load   rb     -- 33 -- load result
-    , #jmpreg rc     -- 34 -- jump to return address
-
-    -- return1:
-    , #cnst 1        -- 35
-    , #store rb      -- 36
-    , #pop           -- 37 -- pops to ra
-    , #store  rc     -- 38 -- save result in rc
-    , #load   rb     -- 39 -- load result
-    , #jmpreg rc     -- 40 -- jump to return address
-    ])
 
 
 let fibprog_tail : []vm.instruction = vm.([
@@ -271,18 +280,7 @@ entry test_branch_complex [n] (a: [n]f64) : [n]f64 =
   vm.eval states starting_indices programs |> vm.return
 
 
-entry fib_branch_complex [n] (a: [n]f64) : [n]f64 =
-  let prog (_:i64) : []vm.instruction = vm.(
-    [ -- immediately call fib with `ra`
-      #call 0
-    , #halt
-    ]) in
-
-  let (states, starting_indices, programs) = prog_state_init (copy fibprog) prog a in
-  vm.eval states starting_indices programs |> vm.return
-
-
-entry fib_simple_branch_complex [n] (a: [n]f64) : [n]f64 =
+entry fib_complex [n] (a: [n]f64) : [n]f64 =
   let prog (progstart:i64) : [6]vm.instruction = vm.(
     [ #store rb
     , #cnst ((f64.i64 progstart) + 5f64)
@@ -292,11 +290,22 @@ entry fib_simple_branch_complex [n] (a: [n]f64) : [n]f64 =
     , #halt
     ]) in
 
-  let (states, starting_indices, programs) = prog_state_init (copy fibprog_simple) prog a in
+  let (states, starting_indices, programs) = prog_state_init (copy fibprog) prog a in
   vm.eval states starting_indices programs |> vm.return
 
 
-entry fib_tail_branch_complex [n] (a: [n]f64) : [n]f64 =
+entry fib_simplified_complex [n] (a: [n]f64) : [n]f64 =
+  let prog (_:i64) : []vm.instruction = vm.(
+    [ -- immediately call fib with `ra`
+      #call 0
+    , #halt
+    ]) in
+
+  let (states, starting_indices, programs) = prog_state_init (copy fibprog_simplified) prog a in
+  vm.eval states starting_indices programs |> vm.return
+
+
+entry fib_tail_complex [n] (a: [n]f64) : [n]f64 =
   let prog (_:i64) : []vm.instruction = vm.(
     [ -- immediately call fib with `ra`
       #call 0
