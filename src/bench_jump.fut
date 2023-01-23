@@ -1,5 +1,5 @@
 -- ==
--- entry: half_branch_complex fac_branch_complex fib_branch_complex fib_simple_branch_complex
+-- entry: half_branch_jump fac_branch_complex fib_branch_complex fib_simple_branch_complex
 -- random input {         [100]f64 }
 -- random input {         [500]f64 }
 -- random input {       [1_000]f64 }
@@ -15,63 +15,81 @@ module real = f64
 
 module vm = interp_vector_8_branch real
 
--- Same as fibprog, but without immediates and call/return
---let fibprog : []vm.instruction = vm.([
---    -- fib:
---      #store rb      --  0 -- assume ra is input, `n` -- move n to rb
---    , #cnst   2      --  1 --
---    , #cmp   rb      --  2 --
---    , #jmpgt 35      --  3 -- if 2 > n -> return
---
---    , #push  rb      --  4 -- save n on the stack        -- stack +1
---    , #cnst   1      --  5 --
---    , #store rc      --  6 --
---    , #load  rb      --  7 --
---    , #sub   rc      --  8 -- ra = n - 1
---
---    -- Calculate Fib (n-1)
---    , #store rd      --  9 -- rd = n-1
---    , #cnst  14      -- 10 -- jump back to fib(n-2)
---    , #push  ra      -- 11
---    , #load  rd      -- 12
---    , #jmp    0      -- 13 -- ra = fib (n-1)
---
---    , #store rd      -- 14 -- rd = fib(n-1)
---    , #pop           -- 15 -- ra = n
---    , #store rb      -- 16 -- rb = n
---    , #push  rd      -- 17 -- push fib(n-1)
---
---    -- Calculate Fib (n-2)
---    , #cnst   2      -- 18 --
---    , #store rc      -- 19 --
---    , #load  rb      -- 20
---    , #sub   rc      -- 21 -- ra = n - 2
---
---    , #store rd      -- 22 -- rd = n - 2
---    , #cnst  27      -- 23 -- jump back to fib(n-1) + fib(n-2)
---    , #push  ra      -- 24 -- pc + 2
---    , #load  rd      -- 25 -- ra = (n-2)
---    , #jmp    0      -- 26 -- ra = fib (n-2)
---
---    , #store rb      -- 27 -- rb = fib (n - 2)
---    , #pop           -- 28 -- ra = fib (n - 1)
---    , #add   rb      -- 29 -- rb = fib (n - 1) + fib (n - 2)
---    , #store rb      -- 30 --
---
---    -- return:
---    , #pop           -- 31 -- pops to ra
---    , #store  rc     -- 32 -- save result in rc
---    , #load   rb     -- 33 -- load result
---    , #jmpreg rc     -- 34 -- jump to return address
---
---    -- return1:
---    , #cnst 1        -- 35
---    , #store rb      -- 36
---    , #pop           -- 37 -- pops to ra
---    , #store  rc     -- 38 -- save result in rc
---    , #load   rb     -- 39 -- load result
---    , #jmpreg rc     -- 40 -- jump to return address
---    ])
+
+def init_states [n] vv =
+  replicate n (vm.init 0) |> map2 (\v s -> vm.set s vm.ra v) vv
+
+
+def init_programs [n] [m] (p: i64 -> [m]vm.instruction) (oo: [n]i64) : [] vm.instruction =
+  map p oo |> flatten
+
+
+def prog_state_init [n] [m] (stdlib: []vm.instruction) (p: i64 -> [m]vm.instruction) (a: [n]f64) : ([n]vm.state, [n]i64, []vm.instruction) =
+  let proglen          = length (p 0) in
+  let starting_indices = map (\i -> i * proglen + length stdlib) (iota n) in
+  let programs         = stdlib ++ init_programs p starting_indices in
+  let states           = init_states a in
+    (states, starting_indices, programs)
+
+
+-- Simple non-tail recursive fibonacci sequence
+let fibprog : []vm.instruction = vm.([
+    -- fib:
+      #store rb      --  0 -- assume ra is input, `n` -- move n to rb
+    , #cnst   2      --  1 --
+    , #store rc      --  2
+    , #load  rb      --  3
+    , #jmplt rc 36   --  4 -- if n < 2 -> return
+
+    , #push  rb      --  5 -- save n on the stack        -- stack +1
+    , #cnst (-1)     --  6 --
+    , #store rc      --  7 --
+    , #load  rb      --  8 --
+    , #add   rc      --  9 -- ra = n - 1
+
+    -- Calculate Fib (n-1)
+    , #store rd      -- 10 -- rd = n-1
+    , #cnst  15      -- 11 -- jump back to fib(n-2)
+    , #push  ra      -- 12
+    , #load  rd      -- 13
+    , #jmp    0      -- 14 -- ra = fib (n-1)
+
+    , #store rd      -- 15 -- rd = fib(n-1)
+    , #pop           -- 16 -- ra = n
+    , #store rb      -- 17 -- rb = n
+    , #push  rd      -- 18 -- push fib(n-1)
+
+    -- Calculate Fib (n-2)
+    , #cnst (-2)     -- 19 --
+    , #store rc      -- 20 --
+    , #load  rb      -- 21
+    , #add   rc      -- 22 -- ra = n - 2
+
+    , #store rd      -- 23 -- rd = n - 2
+    , #cnst  29      -- 24 -- jump back to fib(n-1) + fib(n-2)
+    , #push  ra      -- 25 -- pc + 2
+    , #load  rd      -- 26 -- ra = (n-2)
+    , #jmp    0      -- 27 -- ra = fib (n-2)
+
+    , #store rb      -- 28 -- rb = fib (n - 2)
+    , #pop           -- 29 -- ra = fib (n - 1)
+    , #add   rb      -- 30 -- rb = fib (n - 1) + fib (n - 2)
+    , #store rb      -- 31 --
+
+    -- return:
+    , #pop           -- 32 -- pops to ra
+    , #store  rc     -- 33 -- save result in rc
+    , #load   rb     -- 34 -- load result
+    , #jmpreg rc     -- 35 -- jump to return address
+
+    -- return1:
+    , #cnst 1        -- 36
+    , #store rb      -- 37
+    , #pop           -- 38 -- pops to ra
+    , #store  rc     -- 39 -- save result in rc
+    , #load   rb     -- 40 -- load result
+    , #jmpreg rc     -- 41 -- jump to return address
+    ])
 
 
 let fibprog_tail : []vm.instruction = vm.([
@@ -89,22 +107,21 @@ let fibprog_tail : []vm.instruction = vm.([
   , #cnst    1    --  1 -- set rb and rc to 1
   , #store   rb   --  2 -- a = rb
   , #store   rc   --  3 -- b = rc
-  , #cnst    (-1)
-  , #store   rf   --  4 -- b = rc
-  , #cnst    0    --  5 -- set rb and rc to 1
-  , #store   rg   --  6 -- set rb and rc to 1
+  , #cnst    (-1) --  4
+  , #store   rf   --  5 -- b = rc
+  , #cnst    0    --  6 -- set rb and rc to 1
+  , #store   rg   --  7 -- set rb and rc to 1
 
   -- DO {
   -- s = a;
-  , #load    rb   --  7 -- s = a
-  , #store   rd   --  8 -- s = rd
+  , #load    rb   --  8 -- s = a
+  , #store   rd   --  9 -- s = rd
 
   -- a = b;
-  , #load    rc   --  9 -- a = b
-  , #store   rb   -- 10
+  , #load    rc   -- 10 -- a = b
+  , #store   rb   -- 11
 
   -- b += s;
-  , #load    rc   -- 11 -- b += s
   , #add     rd   -- 12 --
   , #store   rc   -- 13 --
 
@@ -114,69 +131,57 @@ let fibprog_tail : []vm.instruction = vm.([
   , #store   re   -- 16
 
   -- } WHILE (N > 0);
-  , #jmplt   rg 7 -- 17
+  , #load    rg   -- 17
+  , #jmplt   re 8 -- 18
 
 
   -- RETURN
-  , #pop          -- 18
-  , #store   rb   -- 19
-  , #load    re   -- 20
-  , #jmpreg  rb   -- 21 -- jump to return address
+  , #pop          -- 19
+  , #store   rg   -- 20
+  , #load    rb   -- 21
+  , #jmpreg  rg   -- 22 -- jump to return address
 ])
 
 
-entry half_branch_complex [n] (a: [n]f64) : [n]f64 =
-  let prog (v: f64) : []vm.instruction = vm.(
-    [ #cnst  v
-    , #store rb
+entry half_branch_jump [n] (a: [n]f64) : [n]f64 =
+  let stdlib = [] in
+  let prog _ : []vm.instruction = vm.(
+    [ #store rb
     , #cnst  0.5f64
     , #mul   rb
     , #halt
     ])
   in
 
-  let proglen = length (prog 0) in
-  let programs : []vm.instruction = map prog a |> flatten in
-  let states   : [n]vm.state = vm.init 0 |> replicate n in
-  let prog_idx = map ((*) proglen) (iota n)  in
-  vm.eval states prog_idx programs |> vm.return
+  let (states, starting_indices, programs) = prog_state_init stdlib prog a in
+  vm.eval states starting_indices programs |> vm.return
 
 
---entry fib_simple_branch_complex [n] (a: [n]f64) : [n]f64 =
---  let stdprog = fibprog in
---  let prog (progstart:i64) : [6]vm.instruction = vm.(
---    [ #store rb
---    , #cnst ((f64.i64 progstart) + 5f64)
---    , #push ra
---    , #load rb
---    , #jmp  0
---    , #halt
---    ]) in
---  let plen = length (prog 0)
---  let prog_idx = map (\i -> i * plen + length stdprog) (iota n) in
---  let programs : []vm.instruction = stdprog ++ (map prog prog_idx |> flatten)
---  in
---  let states   : [n]vm.state = vm.init 0
---      |> replicate n
---      |> map2 (\v s -> vm.set s vm.ra v) (map (\x -> x * 1 |> f64.ceil) a) in
---  vm.eval states prog_idx programs |> vm.return
+entry fib_simple_branch_complex [n] (a: [n]f64) : [n]f64 =
+  let stdlib = copy fibprog in
+  let prog (progstart:i64) : [6]vm.instruction = vm.(
+    [ #store rb
+    , #cnst ((f64.i64 progstart) + 5f64)
+    , #push ra
+    , #load rb
+    , #jmp  0
+    , #halt
+    ]) in
+
+  let (states, starting_indices, programs) = prog_state_init stdlib prog a in
+  vm.eval states starting_indices programs |> vm.return
 
 
-entry fib_tail_branch_complex [n] (a: [n]f64) : [n]f64 =
-  let stdprog = fibprog_tail in
+entry fib_tail_jump [n] (a: [n]f64) : [n]f64 =
+  let stdlib = copy fibprog_tail in
   let prog (progstart:i64) : []vm.instruction = vm.(
     [ #store rb
-    , #cnst ((f64.i64 progstart) + 7f64)
+    , #cnst ((f64.i64 progstart) + 5f64)
     , #push ra
     , #load rb
     , #jmp 0
     , #halt
     ]) in
-  let plen = length (prog 0)
-  let prog_idx = map (\i -> i * plen + length stdprog) (iota n) in
-  let programs : []vm.instruction = stdprog ++ (map prog prog_idx |> flatten)
-  in
-  let states   : [n]vm.state = vm.init 0
-      |> replicate n
-      |> map2 (\v s -> vm.set s vm.ra v) (map (\x -> x * 1 |> f64.ceil) a) in
-  vm.eval states prog_idx programs |> vm.return
+
+  let (states, starting_indices, programs) = prog_state_init stdlib prog a in
+  vm.eval states starting_indices programs |> vm.return
