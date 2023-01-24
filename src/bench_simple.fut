@@ -47,6 +47,12 @@ module it_4 = interp_tuple_4_memory real
 module iv_4 = interp_vector_4_memory real
 
 
+
+--| Run halving function purely in futhark
+entry half_pure [n] (a: [n]f64) : [n]f64 =
+  map ((*) 0.5) a
+
+
 --| Run halving function using interpreter with dynamic allocated memory
 entry half_d4 [n] (a: [n]f64) : [n]f64 =
   let prog : [n][4]id_4.instruction = map (\v -> id_4.(
@@ -80,9 +86,9 @@ entry half_t4 [n] (a: [n]f64) : [n]f64 =
   map (\p -> it_4.(eval (init 0) p |> return)) prog
 
 
---| Run halving function purely in futhark
-entry half_pure [n] (a: [n]f64) : [n]f64 =
-  map ((*) 0.5) a
+--| Calculate euclidean distance purely in futhark
+entry euler_pure [n] (a: [n]f64) (b: [n]f64) : [n]f64 =
+  map2 (\x y -> f64.sqrt (x*x + y*y)) a b
 
 
 --| Calculate euclidean distance with dynamic memory
@@ -158,8 +164,3 @@ entry euler_t4 [n] (a: [n]f64) (b: [n]f64) : [n]f64 =
     , #sqrt
   ])) a b in
   map (\p -> it_4.(eval (init 0) p |> return)) prog
-
-
---| Calculate euclidean distance purely in futhark
-entry euler_pure [n] (a: [n]f64) (b: [n]f64) : [n]f64 =
-  map2 (\x y -> f64.sqrt (x*x + y*y)) a b
