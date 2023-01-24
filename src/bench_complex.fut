@@ -1,5 +1,5 @@
 -- ==
--- entry: half_simplified_branch_complex half_branch_complex
+-- entry: complex_half complex_half_simplified
 -- random input {     [128]f64 }
 -- random input {     [256]f64 }
 -- random input {     [512]f64 }
