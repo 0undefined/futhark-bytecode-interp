@@ -1,5 +1,5 @@
 -- ==
--- entry: half_branch_jump
+-- entry: jump_half
 -- random input {     [128]f64 }
 -- random input {     [256]f64 }
 -- random input {     [512]f64 }
@@ -45,9 +45,6 @@ def prog_state_init [n] [m] (stdlib: []vm.instruction) (p: i64 -> [m]vm.instruct
 
 -- ==
 -- entry: jump_fac jump_fib jump_fib_tail
--- script input { rand_10      16i64 }
--- script input { rand_10      32i64 }
--- script input { rand_10      64i64 }
 -- script input { rand_10     128i64 }
 -- script input { rand_10     256i64 }
 -- script input { rand_10     512i64 }

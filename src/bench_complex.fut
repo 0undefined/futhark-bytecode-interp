@@ -281,47 +281,6 @@ entry complex_fac [n] (a: [n]f64) : [n]f64 =
   vm.eval states starting_indices programs |> vm.return
 
 
-entry complex_pop [n] (a: [n]f64) : [n]f64 =
-  let prog = const vm.(
-    [ #push ra
-    , #cnst 2f64
-    , #push ra
-    , #pop
-    , #store rb
-    , #pop
-    , #add rb
-    , #halt
-    ]) in
-
-  let (states, starting_indices, programs) = prog_state_init [] prog a in
-  vm.eval states starting_indices programs |> vm.return
-
-
-entry complex_test_branch [n] (a: [n]f64) : [n]f64 =
-  let std : [8]vm.instruction = vm.([
-    -- fib:
-      #store  rb      --  0 -- assume ra is input, `n` -- move n to rb
-    , #cnst   5f64
-    , #add    rb
-    , #store  rb
-    , #pop
-    , #store  rc
-    , #load   rb
-    , #jmpreg rc
-    ]) in
-  let prog (progstart:i64) : [6]vm.instruction = vm.(
-    [ #store rb
-    , #cnst ((f64.i64 progstart) + 5f64)
-    , #push ra
-    , #load rb
-    , #jmp  0
-    , #halt
-    ]) in
-
-  let (states, starting_indices, programs) = prog_state_init std prog a in
-  vm.eval states starting_indices programs |> vm.return
-
-
 entry complex_fib [n] (a: [n]f64) : [n]f64 =
   let prog (progstart:i64) : [6]vm.instruction = vm.(
     [ #store rb
