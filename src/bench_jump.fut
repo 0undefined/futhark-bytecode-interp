@@ -9,7 +9,12 @@
 -- random input {     [100_000]f64 }
 -- random input {     [500_000]f64 }
 -- random input {   [1_000_000]f64 }
+
 open import "vm_branch_simple"
+import "lib/github.com/diku-dk/cpprandom/random"
+
+module rng_engine = minstd_rand
+module rand = uniform_real_distribution f64 rng_engine
 
 module real = f64
 
@@ -30,6 +35,35 @@ def prog_state_init [n] [m] (stdlib: []vm.instruction) (p: i64 -> [m]vm.instruct
   let programs         = stdlib ++ init_programs p starting_indices in
   let states           = init_states a in
     (states, starting_indices, programs)
+
+-- ==
+-- entry: jump_fac jump_fib jump_fib_tail
+-- script input { rand_10      16i64 }
+-- script input { rand_10      32i64 }
+-- script input { rand_10      64i64 }
+-- script input { rand_10     128i64 }
+-- script input { rand_10     256i64 }
+-- script input { rand_10     512i64 }
+-- script input { rand_10    1024i64 }
+-- script input { rand_10    2048i64 }
+-- script input { rand_10    4096i64 }
+-- script input { rand_10    8192i64 }
+-- script input { rand_10   16384i64 }
+-- script input { rand_10   32768i64 }
+-- script input { rand_10   65536i64 }
+-- script input { rand_10  131072i64 }
+-- script input { rand_10  262144i64 }
+-- script input { rand_10  524288i64 }
+-- script input { rand_10 1048576i64 }
+-- script input { rand_10 2097152i64 }
+-- script input { rand_10 4194304i64 }
+
+--| Yield random values in range [0;10]
+entry rand_10 (n: i64) : [n]f64 =
+  rng_engine.rng_from_seed [0] -- just use zero as seed
+  |> rng_engine.split_rng n
+  |> map ((.1) <-< rand.rand (0, 10))
+
 
 
 -- Simple non-tail recursive fibonacci sequence
@@ -143,9 +177,9 @@ let fibprog_tail : []vm.instruction = vm.([
 ])
 
 
-entry half_branch_jump [n] (a: [n]f64) : [n]f64 =
+entry jump_half [n] (a: [n]f64) : [n]f64 =
   let stdlib = [] in
-  let prog _ : []vm.instruction = vm.(
+  let prog = const vm.(
     [ #store rb
     , #cnst  0.5f64
     , #mul   rb
@@ -199,7 +233,7 @@ entry jump_fac [n] (a: [n]f64) : [n]f64 =
   vm.eval states starting_indices programs |> vm.return
 
 
-entry fib_simple_branch_complex [n] (a: [n]f64) : [n]f64 =
+entry jump_fib [n] (a: [n]f64) : [n]f64 =
   let stdlib = copy fibprog in
   let prog (progstart:i64) : [6]vm.instruction = vm.(
     [ #store rb
@@ -214,7 +248,7 @@ entry fib_simple_branch_complex [n] (a: [n]f64) : [n]f64 =
   vm.eval states starting_indices programs |> vm.return
 
 
-entry fib_tail_jump [n] (a: [n]f64) : [n]f64 =
+entry jump_fib_tail [n] (a: [n]f64) : [n]f64 =
   let stdlib = copy fibprog_tail in
   let prog (progstart:i64) : []vm.instruction = vm.(
     [ #store rb
