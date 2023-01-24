@@ -23,9 +23,6 @@
 -- random input {   [1_000_000]f64 [1_000_000]f64 }
 open import "vm_simple"
 
-import "lib/github.com/diku-dk/segmented/segmented"
-
-
 module real = f64
 
 module id_4 = interp_dynamic_memory real { def numregs =  4 : i64 }
