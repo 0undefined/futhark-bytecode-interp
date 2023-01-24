@@ -10,7 +10,7 @@ BENCHMARK_DIR=${BENCHMARK_DIR:-.benchmarks}
 ! [ -d "${BENCHMARK_DIR}" ] && mkdir -p ${BENCHMARK_DIR}
 
 # Get entry names
-SIMPLE_ENTRIES=( $(sed -E '/^entry/!d;s/^entry ([^ ]+) .*/\1/g' "${FILE}") )
+SIMPLE_ENTRIES=( $(sed -E '/^entry/!d;/rand_10/d;s/^entry ([^ ]+) .*/\1/g' "${FILE}") )
 
 NUM_ENTRIES=$((${#SIMPLE_ENTRIES[@]}))
 
