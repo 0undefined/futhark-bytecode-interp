@@ -1,14 +1,21 @@
 -- ==
--- entry: half_simplified_branch_complex half_branch_complex fac_branch_complex fib_branch_complex fib_simple_branch_complex
--- random input {         [100]f64 }
--- random input {         [500]f64 }
--- random input {       [1_000]f64 }
--- random input {       [5_000]f64 }
--- random input {      [10_000]f64 }
--- random input {      [50_000]f64 }
--- random input {     [100_000]f64 }
--- random input {     [500_000]f64 }
--- random input {   [1_000_000]f64 }
+-- entry: half_simplified_branch_complex half_branch_complex
+-- random input { [    128]f64 }
+-- random input { [    256]f64 }
+-- random input { [    512]f64 }
+-- random input { [   1024]f64 }
+-- random input { [   2048]f64 }
+-- random input { [   4096]f64 }
+-- random input { [   8192]f64 }
+-- random input { [  16384]f64 }
+-- random input { [  32768]f64 }
+-- random input { [  65536]f64 }
+-- random input { [ 131072]f64 }
+-- random input { [ 262144]f64 }
+-- random input { [ 524288]f64 }
+-- random input { [1048576]f64 }
+-- random input { [2097152]f64 }
+-- random input { [4194304]f64 }
 
 open import "vm_branch_complex"
 import "lib/github.com/diku-dk/cpprandom/random"
@@ -45,9 +52,6 @@ entry rand_10 (n: i64) : [n]f64 =
 
 -- ==
 -- entry: complex_fac complex_fib complex_fib_simple complex_fib_tail
--- script input { rand_10      16i64 }
--- script input { rand_10      32i64 }
--- script input { rand_10      64i64 }
 -- script input { rand_10     128i64 }
 -- script input { rand_10     256i64 }
 -- script input { rand_10     512i64 }
