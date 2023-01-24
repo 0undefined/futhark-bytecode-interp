@@ -2,4 +2,5 @@
 !*.fut
 !*.sh
 !sneaker
+!runbenchmarks.sh
 !futhark.pkg
