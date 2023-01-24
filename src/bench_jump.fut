@@ -1,14 +1,21 @@
 -- ==
--- entry: half_branch_jump fac_branch_complex fib_branch_complex fib_simple_branch_complex
--- random input {         [100]f64 }
--- random input {         [500]f64 }
--- random input {       [1_000]f64 }
--- random input {       [5_000]f64 }
--- random input {      [10_000]f64 }
--- random input {      [50_000]f64 }
--- random input {     [100_000]f64 }
--- random input {     [500_000]f64 }
--- random input {   [1_000_000]f64 }
+-- entry: half_branch_jump
+-- random input { [    128]f64 }
+-- random input { [    256]f64 }
+-- random input { [    512]f64 }
+-- random input { [   1024]f64 }
+-- random input { [   2048]f64 }
+-- random input { [   4096]f64 }
+-- random input { [   8192]f64 }
+-- random input { [  16384]f64 }
+-- random input { [  32768]f64 }
+-- random input { [  65536]f64 }
+-- random input { [ 131072]f64 }
+-- random input { [ 262144]f64 }
+-- random input { [ 524288]f64 }
+-- random input { [1048576]f64 }
+-- random input { [2097152]f64 }
+-- random input { [4194304]f64 }
 
 open import "vm_branch_simple"
 import "lib/github.com/diku-dk/cpprandom/random"
