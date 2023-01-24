@@ -1,37 +1,37 @@
 -- ==
 -- entry: half_pure half_d4 half_v4 half_t4
--- random input { [    128]f64 }
--- random input { [    256]f64 }
--- random input { [    512]f64 }
--- random input { [   1024]f64 }
--- random input { [   2048]f64 }
--- random input { [   4096]f64 }
--- random input { [   8192]f64 }
--- random input { [  16384]f64 }
--- random input { [  32768]f64 }
--- random input { [  65536]f64 }
--- random input { [ 131072]f64 }
--- random input { [ 262144]f64 }
--- random input { [ 524288]f64 }
+-- random input {     [128]f64 }
+-- random input {     [256]f64 }
+-- random input {     [512]f64 }
+-- random input {    [1024]f64 }
+-- random input {    [2048]f64 }
+-- random input {    [4096]f64 }
+-- random input {    [8192]f64 }
+-- random input {   [16384]f64 }
+-- random input {   [32768]f64 }
+-- random input {   [65536]f64 }
+-- random input {  [131072]f64 }
+-- random input {  [262144]f64 }
+-- random input {  [524288]f64 }
 -- random input { [1048576]f64 }
 -- random input { [2097152]f64 }
 -- random input { [4194304]f64 }
 
 -- ==
 -- entry: euler_pure euler_d4 euler_v4 euler_t4
--- random input { [    128]f64 [    128]f64 }
--- random input { [    256]f64 [    256]f64 }
--- random input { [    512]f64 [    512]f64 }
--- random input { [   1024]f64 [   1024]f64 }
--- random input { [   2048]f64 [   2048]f64 }
--- random input { [   4096]f64 [   4096]f64 }
--- random input { [   8192]f64 [   8192]f64 }
--- random input { [  16384]f64 [  16384]f64 }
--- random input { [  32768]f64 [  32768]f64 }
--- random input { [  65536]f64 [  65536]f64 }
--- random input { [ 131072]f64 [ 131072]f64 }
--- random input { [ 262144]f64 [ 262144]f64 }
--- random input { [ 524288]f64 [ 524288]f64 }
+-- random input {     [128]f64     [128]f64 }
+-- random input {     [256]f64     [256]f64 }
+-- random input {     [512]f64     [512]f64 }
+-- random input {    [1024]f64    [1024]f64 }
+-- random input {    [2048]f64    [2048]f64 }
+-- random input {    [4096]f64    [4096]f64 }
+-- random input {    [8192]f64    [8192]f64 }
+-- random input {   [16384]f64   [16384]f64 }
+-- random input {   [32768]f64   [32768]f64 }
+-- random input {   [65536]f64   [65536]f64 }
+-- random input {  [131072]f64  [131072]f64 }
+-- random input {  [262144]f64  [262144]f64 }
+-- random input {  [524288]f64  [524288]f64 }
 -- random input { [1048576]f64 [1048576]f64 }
 -- random input { [2097152]f64 [2097152]f64 }
 -- random input { [4194304]f64 [4194304]f64 }
