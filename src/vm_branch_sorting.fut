@@ -68,6 +68,7 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
 
   def return [n] : [n]state -> [n]u = map (\s' -> v8.get 0 s'.mem)
 
+
   def (+) (a: u) (b: u) = t.(a + b)
   def (*) (a: u) (b: u) = t.(a * b)
   def (/) (a: u) (b: u) = t.(a / b)
@@ -77,7 +78,6 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
 
   def (==) (a: u) (b: u) = t.(a == b)
   def (<) (a: u) (b: u)  = t.(a < b)
-  --def (!=) (a: vm.instruction) (b: vm.instruction) = vm.instruction.(!=) a b
 
   def jmp (s: state) (offset: i64) = s with pc = offset
 
@@ -134,38 +134,62 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
       |> i64.((<) (m / n))
 
 
-    let sort' 'a (xs: [m](i64,a)) = radix_sort_by_key (.0) (i64.num_bits) (i64.get_bit) xs
+    let sort' [mm] 'a (xs: [mm](i64,a)) = radix_sort_by_key (.0) (i64.num_bits) (i64.get_bit) xs
     in
 
-    let sort (ids: [m]i64) (states: [m]state) : ([m]i64, [m]state) =
-      let normalized_pcs : [m]i64 =
-        map2 (\i s ->
+    let sort [mm] (idstates: [mm](i64,state)) : ([mm]i64, [mm]state) =
+      let normalized_pcs : [mm]i64 =
+        map (\(i,s) ->
           normalize_pc s.pc pidx[i]
-        ) ids states
+        ) idstates
       in
         if ! should_sort normalized_pcs then
-          (ids, states)
+          unzip idstates
         else
           -- TODO: Sort only when entropy > threshold
-          zip ids states        -- [m](ids, states)
-          |> zip normalized_pcs -- [m](npc, (ids, states))
+          zip normalized_pcs idstates -- [m](npc, (ids, states))
           |> sort'
           |> unzip
           |> (.1)
           |> unzip -- ([m]ids, [m]states)
     in
 
-    let evaluate4 (s: [m]state) =
-      loop s' = s for i < 4 do map step s'
+    let halted (instr: instruction) : bool =
+      match instr
+      case #halt -> true
+      case _ -> false
+    in
+
+    let evaluate_4 (s: state) =
+      loop s = s
+      for i < 4
+      do step s
+
+    let evaluate_while ((i,s): (i64,state)) =
+      (i,
+      loop s = s
+      while ! halted p[s.pc]
+      do step s
+      )
+
+    -- Returns a tuple of (still_running, finished) states
+    let evaluate [k] (s: [k](i64,state)) : ([](i64, state), [](i64, state)) =
+      let s' = map evaluate_while s
+      in partition (\(_,s'') -> ! halted p[s''.pc]) s'
 
     -- sort states by their original ID's s.t. they're in order again
-    in ((.1) <-< unzip <-< sort' <-< uncurry zip) <|
+    in
       -- States are paired with their original index
-      loop (i, s') = (iota m, map2 (\(s':state) pc -> s' with pc = pc) s pidx)
-      while (any (\ss ->
-        match p[ss.pc]
-        case #halt -> false
-        case _     -> true
-        ) s')
-      do let (ii,ss) = evaluate4 s' |> sort i in (ii,ss)
+      let init_states =  map2 (\(s':state) pc -> s' with pc = pc) s pidx in
+
+      (.1) <| loop (running, stopped, k) = (zip (iota m) <| init_states, copy init_states, m)
+        while k > 0
+        do
+          let (running', stopped') = evaluate (take k running) in
+          let (stopped_indices, stopped_states) = unzip stopped' in
+          let stopped'' = scatter (copy stopped) stopped_indices stopped_states in
+
+          let k' = length running' in
+          let running'' = scatter (copy running) (iota k') (running' :> [k'](i64, state)) in
+            (running'', stopped'', k')
 }
