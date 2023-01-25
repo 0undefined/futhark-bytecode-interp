@@ -153,7 +153,10 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
           |> unzip
           |> (.1)
           |> unzip -- ([m]ids, [m]states)
+    in
 
+    let evaluate4 (s: [m]state) =
+      loop s' = s for i < 4 do map step s'
 
     -- sort states by their original ID's s.t. they're in order again
     in ((.1) <-< unzip <-< sort' <-< uncurry zip) <|
@@ -164,5 +167,5 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
         case #halt -> false
         case _     -> true
         ) s')
-      do let (ii,ss) = map step s' |> sort i in (ii,ss)
+      do let (ii,ss) = evaluate4 s' |> sort i in (ii,ss)
 }
