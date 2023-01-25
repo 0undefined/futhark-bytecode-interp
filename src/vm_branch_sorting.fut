@@ -195,14 +195,14 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
     --  )
 
     -- Returns a tuple of (still_running, finished) states
-    let evaluate [k] (s: [k](i64,state)) : ([](i64, state), [](i64, state)) =
+    let evaluate [k] (s: [k](i64,state)) : ([k](i64, state), i64) =
       let s' = map evaluate_8 s |> sort
       -- count non-finished threads
       in let k' = i64.sum (map (\ss ->
         i64.bool (i64.(i32(ss.1.pc.0) != num_progs - 1)
                && i64.(i32(ss.1.pc.1) != n - 1))
         ) s')
-        in split k' s'
+      in (s', k')
       --in partition (\(_,s'') -> ! halted p[s''.pc.0,s''.pc.1]) s'
 
     -- sort states by their original ID's s.t. they're in order again
@@ -210,14 +210,13 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
       -- States are paired with their original index
       let init_states =  map2 (\(s':state) pc -> s' with pc = pc) s pidx in
 
-      (.1) <| loop (running, stopped, k) = (zip (iota m) <| init_states, copy init_states, m)
+      let (ss,_) = loop (states, k) = (zip (iota m) <| init_states, m)
         while k > 0
         do
-          let (running', stopped')              = evaluate (take k running) in
-          let (stopped_indices, stopped_states) = unzip stopped' in
-          let stopped'' = scatter stopped stopped_indices stopped_states in
+          let (states', k') = evaluate (take k states) in
+          let running'      = scatter (copy states) (iota k) states' in
+            (running', i64.(k - k'))
 
-          let k' = length running' in
-          let running'' = scatter (copy running) (iota k') (running' :> [k'](i64, state)) in
-            (running'', stopped'', k')
+      in let (state_ids, states) = unzip ss
+      in scatter (copy init_states) state_ids states
 }
