@@ -38,8 +38,8 @@ def init_programs [n] [m] (p: i64 -> [m]vm.instruction) (oo: [n]i64) : [] vm.ins
 
 def prog_state_init [n] [m] (stdlib: []vm.instruction) (p: i64 -> [m]vm.instruction) (a: [n]f64) : ([n]vm.state, [n]i64, []vm.instruction) =
   let proglen          = length (p 0) in
-  let starting_indices = map (\i -> i * proglen + length stdlib) (iota n) in
-  let programs         = stdlib ++ init_programs p starting_indices in
+  let starting_indices = map (\i -> length stdlib) (iota n) in
+  let programs         = stdlib ++ p (length stdlib) -- init_programs p starting_indices in
   let states           = init_states a in
     (states, starting_indices, programs)
 
@@ -67,7 +67,6 @@ entry rand_10 (n: i64) : [n]f64 =
   rng_engine.rng_from_seed [0] -- just use zero as seed
   |> rng_engine.split_rng n
   |> map ((.1) <-< rand.rand (0, 10))
-
 
 
 -- Simple non-tail recursive fibonacci sequence
@@ -181,87 +180,29 @@ let fibprog_tail : []vm.instruction = vm.([
 ])
 
 
-entry sort_half [n] (a: [n]f64) : [n]f64 =
-  let stdlib = [] in
-  let prog = const vm.(
-    [ #store rb
-    , #cnst  0.5f64
-    , #mul   rb
-    , #halt
-    ])
-  in
-
-  let (states, starting_indices, programs) = prog_state_init stdlib prog a in
-  vm.eval states starting_indices programs |> vm.return
-
-
-entry sort_fac [n] (a: [n]f64) : [n]f64 =
-  let prog (offset: i64): []vm.instruction = vm.(
-    -- f (n) = !n
-    -- int factorial(int n) {
-    --  int a = 1;
-    --  if (n < a) return a;
-    --  do {
-    --    a *= n;
-    --    n--;
-    --  } while (n > 0);
-    --   return a;
-    -- }
-    [ #store rc     --  0 -- store  n in rb
-
-    , #cnst   1     --  1 --
-    , #store rb     --  2 -- a = 1
-    , #store rd     --  3 -- alias rd = 1
-    , #cnst (-1)    --  4
-    , #store re     --  5 -- alias rd = 1
-
-    , #load  rc     --  6 -- load is necessary when we jump to here
-    , #jmplt rd (offset + 14i64) --  7 -- return 1
-
-    , #mul   rb     --  8 --
-    , #store rb     --  9 --
-
-    , #load  rc     -- 10 -- n--;
-    , #add   re     -- 11 --
-    , #store rc     -- 12 --
-
-    , #jmp (offset + (6i64)) -- 13 -- jmp START
-
-    -- END
-    , #load  rb     -- 14
-    , #halt         -- 15
-    ])
-  in
-
-  let (states, starting_indices, programs) = prog_state_init [] prog a in
-  vm.eval states starting_indices programs |> vm.return
-
-
-entry sort_fib [n] (a: [n]f64) : [n]f64 =
-  let stdlib = copy fibprog in
-  let prog (progstart:i64) : [6]vm.instruction = vm.(
-    [ #store rb
-    , #cnst ((f64.i64 progstart) + 5f64)
-    , #push ra
-    , #load rb
-    , #jmp  0
-    , #halt
-    ]) in
-
-  let (states, starting_indices, programs) = prog_state_init stdlib prog a in
-  vm.eval states starting_indices programs |> vm.return
-
+def pad [n] (p: [n]vm.instruction) (sz:i64) : [sz]vm.instruction =
+  if n == sz then p :> [sz]vm.instruction
+  else
+    let padding = replicate (sz - n) vm.(#halt)
+    in (p ++ padding) :> [sz]vm.instruction
 
 entry sort_fib_tail [n] (a: [n]f64) : [n]f64 =
   let stdlib = copy fibprog_tail in
-  let prog (progstart:i64) : []vm.instruction = vm.(
+  let prog : []vm.instruction = vm.(
     [ #store rb
-    , #cnst ((f64.i64 progstart) + 5f64)
+    , #cnst (f64.from_bits ((1 << u64.i32 i32.num_bits) | 5u64))
     , #push ra
     , #load rb
     , #jmp 0
     , #halt
-    ]) in
+    ])
 
-  let (states, starting_indices, programs) = prog_state_init stdlib prog a in
-  vm.eval states starting_indices programs |> vm.return
+  in let maxlen = i64.max (length prog) (length stdlib)
+  in let prog' = pad prog maxlen
+  in let stdlib' = pad stdlib maxlen
+
+  in let starting_indices = replicate n (1, 0)
+  in let prog_final = [stdlib', prog']
+  in let states = init_states a
+
+  in vm.eval states starting_indices prog_final |> vm.return
