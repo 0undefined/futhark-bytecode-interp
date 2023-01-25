@@ -89,9 +89,9 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
 
   def eval [m] [n] [num_progs] (s: [m]state) (pidx: [m](i32,i32)) (p: [num_progs][n]instruction) =
 
-    let step (s: state) : state =
+    let step (instr: instruction) (s: state) : state =
       let fstval : u = get s ra in
-      match p[s.pc.0,s.pc.1]
+      match instr
       case #add  index -> (+) fstval (get s index) |> set s ra
       case #mul  index -> (*) fstval (get s index) |> set s ra
       case #sqrt       -> sqrt fstval              |> set s ra
@@ -170,33 +170,40 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
       case _ -> false
     in
 
-    let evaluate_4 ((i,s): (i64,state)) =
-      (i,
-      loop s
-      for i < 4
-      do step s
-      )
+    --let evaluate_4 ((i,s): (i64,state)) =
+    --  (i,
+    --  loop s
+    --  for i < 4
+    --  do step s
+    --  )
 
     let evaluate_8 ((i,s): (i64,state)) =
       (i,
-      loop s
-      for i < 8
-      do step s
+      (.1) <| loop (j,s,instr) = (0, s, p[s.pc.0,s.pc.1])
+      while i64.(j < 8) && ! halted instr
+      do let s' = step instr s in
+        (i64.(j + 1), s', p[s'.pc.0,s'.pc.1])
       )
 
-    let evaluate_1 ((i,s): (i64,state)) = (i, step s)
+    --let evaluate_1 ((i,s): (i64,state)) = (i, step s)
 
-    let evaluate_while ((i,s): (i64,state)) =
-      (i,
-      loop s
-      while ! halted p[s.pc.0,s.pc.1]
-      do step s
-      )
+    --let evaluate_while ((i,s): (i64,state)) =
+    --  (i,
+    --  loop s
+    --  while ! halted p[s.pc.0,s.pc.1]
+    --  do step s
+    --  )
 
     -- Returns a tuple of (still_running, finished) states
     let evaluate [k] (s: [k](i64,state)) : ([](i64, state), [](i64, state)) =
-      let s' = map evaluate_8 s --|> sort
-      in partition (\(_,s'') -> ! halted p[s''.pc.0,s''.pc.1]) s'
+      let s' = map evaluate_8 s |> sort
+      -- count non-finished threads
+      in let k' = i64.sum (map (\ss ->
+        i64.bool (i64.(i32(ss.1.pc.0) != num_progs - 1)
+               && i64.(i32(ss.1.pc.1) != n - 1))
+        ) s')
+        in split k' s'
+      --in partition (\(_,s'') -> ! halted p[s''.pc.0,s''.pc.1]) s'
 
     -- sort states by their original ID's s.t. they're in order again
     in
@@ -206,7 +213,7 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
       (.1) <| loop (running, stopped, k) = (zip (iota m) <| init_states, copy init_states, m)
         while k > 0
         do
-          let (running', stopped') = evaluate (take k running) in
+          let (running', stopped')              = evaluate (take k running) in
           let (stopped_indices, stopped_states) = unzip stopped' in
           let stopped'' = scatter stopped stopped_indices stopped_states in
 
