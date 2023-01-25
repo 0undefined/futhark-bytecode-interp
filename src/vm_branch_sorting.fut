@@ -120,11 +120,11 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
       |> i64.((<) 3)
 
     -- Determine wether or not we should sort the indices
-    let should_sort_sqrt [m] (normalized_pcs: [m]i64) : bool =
+    let should_sort_half [m] (normalized_pcs: [m]i64) : bool =
       let npc' = rotate (-1) normalized_pcs in
-      map2 (i64.-) normalized_pcs npc' |> i64.maximum |> f64.i64
-      -- MaximumProgramCounterDiff > sqrt(m / n)
-      |> f64.((<) (f64.sqrt f64.i64(m / n)))
+      map2 (i64.-) normalized_pcs npc' |> i64.maximum
+      -- MaximumProgramCounterDiff > (m / n) / 2
+      |> i64.((<) (m / n / 2))
 
     -- Determine wether or not we should sort the indices
     let should_sort [m] (normalized_pcs: [m]i64) : bool =
