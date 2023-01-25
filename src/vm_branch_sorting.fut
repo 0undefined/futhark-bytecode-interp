@@ -91,7 +91,7 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
 
     let step (s: state) : state =
       let fstval : u = get s ra in
-      match p[s.pc.0][s.pc.1]
+      match p[s.pc.0,s.pc.1]
       case #add  index -> (+) fstval (get s index) |> set s ra
       case #mul  index -> (*) fstval (get s index) |> set s ra
       case #sqrt       -> sqrt fstval              |> set s ra
@@ -179,15 +179,15 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
 
     let evaluate_while ((i,s): (i64,state)) =
       (i,
-      loop s = s
-      while ! halted p[s.pc.0][s.pc.1]
+      loop s
+      while ! halted p[s.pc.0,s.pc.1]
       do step s
       )
 
     -- Returns a tuple of (still_running, finished) states
     let evaluate [k] (s: [k](i64,state)) : ([](i64, state), [](i64, state)) =
-      let s' = map evaluate_4 s |> sort
-      in partition (\(_,s'') -> ! halted p[s''.pc.0][s''.pc.1]) s'
+      let s' = map evaluate_8 s --|> sort
+      in partition (\(_,s'') -> ! halted p[s''.pc.0,s''.pc.1]) s'
 
     -- sort states by their original ID's s.t. they're in order again
     in
