@@ -137,21 +137,20 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
     let sort' [mm] 'a (xs: [mm](i64,a)) = radix_sort_by_key (.0) (i64.num_bits) (i64.get_bit) xs
     in
 
-    let sort [mm] (idstates: [mm](i64,state)) : ([mm]i64, [mm]state) =
+    let sort [mm] (idstates: [mm](i64,state)) : [mm](i64, state) =
       let normalized_pcs : [mm]i64 =
         map (\(i,s) ->
           normalize_pc s.pc pidx[i]
         ) idstates
       in
         if ! should_sort normalized_pcs then
-          unzip idstates
+          idstates
         else
           -- TODO: Sort only when entropy > threshold
           zip normalized_pcs idstates -- [m](npc, (ids, states))
           |> sort'
           |> unzip
           |> (.1)
-          |> unzip -- ([m]ids, [m]states)
     in
 
     let halted (instr: instruction) : bool =
@@ -160,10 +159,12 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
       case _ -> false
     in
 
-    let evaluate_4 (s: state) =
+    let evaluate_4 ((i,s): (i64,state)) =
+      (i,
       loop s = s
       for i < 4
       do step s
+      )
 
     let evaluate_while ((i,s): (i64,state)) =
       (i,
@@ -174,7 +175,7 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
 
     -- Returns a tuple of (still_running, finished) states
     let evaluate [k] (s: [k](i64,state)) : ([](i64, state), [](i64, state)) =
-      let s' = map evaluate_while s
+      let s' = map evaluate_while s |> sort
       in partition (\(_,s'') -> ! halted p[s''.pc]) s'
 
     -- sort states by their original ID's s.t. they're in order again
