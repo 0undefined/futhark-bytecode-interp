@@ -172,10 +172,19 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
 
     let evaluate_4 ((i,s): (i64,state)) =
       (i,
-      loop s = s
+      loop s
       for i < 4
       do step s
       )
+
+    let evaluate_8 ((i,s): (i64,state)) =
+      (i,
+      loop s
+      for i < 8
+      do step s
+      )
+
+    let evaluate_1 ((i,s): (i64,state)) = (i, step s)
 
     let evaluate_while ((i,s): (i64,state)) =
       (i,
@@ -199,7 +208,7 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
         do
           let (running', stopped') = evaluate (take k running) in
           let (stopped_indices, stopped_states) = unzip stopped' in
-          let stopped'' = scatter (copy stopped) stopped_indices stopped_states in
+          let stopped'' = scatter stopped stopped_indices stopped_states in
 
           let k' = length running' in
           let running'' = scatter (copy running) (iota k') (running' :> [k'](i64, state)) in
