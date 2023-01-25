@@ -42,7 +42,7 @@ module type interpreter = {
   -- | Evaluate a flat segmented list of programs given some initial states
   -- returning the evaluated list of states.
   -- m is the number of programs in the list of instructions
-  val eval [m] [n] : [m]state -> [m]i64 -> [n]instruction -> [m]state
+  val eval [m] [n] [num_progs] : [m]state -> [m](i32,i32) -> [num_progs][n]instruction -> [m]state
 }
 
 
@@ -94,6 +94,8 @@ module type memtype = {
 
   val sqrt: t -> t
   val to_i64: t -> i64
+  val from_bits: u64 -> t
+  val to_bits: t -> u64
 
   val i32: i32 -> t
   val i64: i64 -> t

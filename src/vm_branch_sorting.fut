@@ -23,7 +23,7 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
 
   type state =
     { mem: v8.vector u
-    , pc: i64
+    , pc: (i32,i32)
     , stack: stack
     }
 
@@ -34,7 +34,7 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
     let h = assert (s.stack.head + 1 < 32) s.stack.head in
     s with stack.mem  = v32.set h v s.stack.mem
       with stack.head = h + 1
-      with pc         = s.pc + 1
+      with pc         = (s.pc.0, s.pc.1 + 1)
 
   def stack_pop (s: state) : (state, u) =
     let h = assert (s.stack.head > 0) s.stack.head in
@@ -59,12 +59,12 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
   def init v : state =
     { mem       = v8.replicate v
     , stack     = stack_init v
-    , pc        = 0
+    , pc        = (0,0)
     }
 
   def get    (s: state) (i:idx)   : u     = v8.get i s.mem
   def set    (s: state) (i:idx) v : state = s with mem = v8.set i v s.mem
-                                              with pc  = s.pc + 1
+                                              with pc  = (s.pc.0, s.pc.1 + 1)
 
   def return [n] : [n]state -> [n]u = map (\s' -> v8.get 0 s'.mem)
 
@@ -75,17 +75,23 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
   def (-) (a: u) (b: u) = t.(a - b)
   def sqrt (a: u)       = t.sqrt a
   def to_i64 (a:u)      = t.to_i64 a
+  def to_bits (a:u)     = t.to_bits a
+  def from_bits (a:u64) = t.from_bits a
 
   def (==) (a: u) (b: u) = t.(a == b)
   def (<) (a: u) (b: u)  = t.(a < b)
 
-  def jmp (s: state) (offset: i64) = s with pc = offset
+  def jmp (s: state) (offset: u64) =
+    s with pc = ( i32.u64 (offset >> u64.i32 u32.num_bits)
+                -- TODO: Check if this is even remotely close to
+                -- the correct answer
+                , i32.u64 (offset & u64.u32 u32.highest))
 
-  def eval [m] [n] (s: [m]state) (pidx: [m]i64) (p: [n]instruction) =
+  def eval [m] [n] [num_progs] (s: [m]state) (pidx: [m](i32,i32)) (p: [num_progs][n]instruction) =
 
     let step (s: state) : state =
       let fstval : u = get s ra in
-      match p[s.pc]
+      match p[s.pc.0][s.pc.1]
       case #add  index -> (+) fstval (get s index) |> set s ra
       case #mul  index -> (*) fstval (get s index) |> set s ra
       case #sqrt       -> sqrt fstval              |> set s ra
@@ -99,8 +105,11 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
 
       -- Jump around!
       case #jmp    offset     -> jmp s offset
-      case #jmpreg idx        -> jmp s (get s idx |> t.to_i64)
-      case #jmplt  idx offset -> if (<) fstval (get s idx) then jmp s offset else s with pc = i64.(s.pc + 1)
+      case #jmpreg idx        -> jmp s (get s idx |> t.to_bits)
+      case #jmplt  idx offset -> if (<) fstval (get s idx) then
+                                   jmp s offset
+                                 else
+                                   s with pc.1 = i32.(s.pc.1 + 1)
 
       case #halt -> s --with pc = -1
     in
@@ -120,11 +129,10 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
       |> i64.((<) 3)
 
     -- Determine wether or not we should sort the indices
-    let should_sort_half [m] (normalized_pcs: [m]i64) : bool =
-      let npc' = rotate (-1) normalized_pcs in
-      map2 (i64.-) normalized_pcs npc' |> i64.maximum
-      -- MaximumProgramCounterDiff > (m / n) / 2
-      |> i64.((<) (m / n / 2))
+    let should_sort_half [m] (pcs: [m](i64,state)) : bool =
+      --reduce (\a c -> if i64.((==) c.0 0) then i64.((+) a 1) else a) 0 pcs
+      --|> i64.((<) (m / n / 2))
+      any ((.1) >-> (.pc) >-> (.0) >-> i32.((==) 0)) pcs
 
     -- Determine wether or not we should sort the indices
     let should_sort [m] (normalized_pcs: [m]i64) : bool =
@@ -134,23 +142,26 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
       |> i64.((<) (m / n))
 
 
-    let sort' [mm] 'a (xs: [mm](i64,a)) = radix_sort_by_key (.0) (i64.num_bits) (i64.get_bit) xs
+    let sort' [mm] 'a (xs: [mm](i64,state)) =
+      let sortkey (s: state) : i64 = ((i64.i32 s.pc.0) << i64.i32 i32.num_bits)
+                                    | (i64.i32 s.pc.1)
+                                    in
+      radix_sort_by_key ((.1) >-> sortkey) (i64.num_bits) (i64.get_bit) xs
     in
 
     let sort [mm] (idstates: [mm](i64,state)) : [mm](i64, state) =
-      let normalized_pcs : [mm]i64 =
-        map (\(i,s) ->
-          normalize_pc s.pc pidx[i]
-        ) idstates
-      in
-        if ! should_sort normalized_pcs then
+      --let normalized_pcs : [mm]i64 =
+      --  map (\(i,s) ->
+      --    normalize_pc s.pc pidx[i]
+      --  ) idstates
+      --in
+        if ! should_sort_half idstates then
           idstates
         else
           -- TODO: Sort only when entropy > threshold
-          zip normalized_pcs idstates -- [m](npc, (ids, states))
-          |> sort'
-          |> unzip
-          |> (.1)
+          --zip normalized_pcs idstates -- [m](npc, (ids, states))
+          --|>
+          sort' idstates
     in
 
     let halted (instr: instruction) : bool =
@@ -169,14 +180,14 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
     let evaluate_while ((i,s): (i64,state)) =
       (i,
       loop s = s
-      while ! halted p[s.pc]
+      while ! halted p[s.pc.0][s.pc.1]
       do step s
       )
 
     -- Returns a tuple of (still_running, finished) states
     let evaluate [k] (s: [k](i64,state)) : ([](i64, state), [](i64, state)) =
-      let s' = map evaluate_while s |> sort
-      in partition (\(_,s'') -> ! halted p[s''.pc]) s'
+      let s' = map evaluate_4 s |> sort
+      in partition (\(_,s'') -> ! halted p[s''.pc.0][s''.pc.1]) s'
 
     -- sort states by their original ID's s.t. they're in order again
     in
