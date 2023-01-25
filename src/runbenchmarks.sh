@@ -5,7 +5,7 @@
 
 # Parameters
 BACKEND=opencl
-FILE=bench_simple.fut
+FILE=bench_sorting.fut
 BENCHMARK_DIR=${BENCHMARK_DIR:-.benchmarks}
 ! [ -d "${BENCHMARK_DIR}" ] && mkdir -p ${BENCHMARK_DIR}
 
