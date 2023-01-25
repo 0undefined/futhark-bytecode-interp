@@ -1,22 +1,3 @@
--- ==
--- entry: sort_half
--- random input {     [128]f64 }
--- random input {     [256]f64 }
--- random input {     [512]f64 }
--- random input {    [1024]f64 }
--- random input {    [2048]f64 }
--- random input {    [4096]f64 }
--- random input {    [8192]f64 }
--- random input {   [16384]f64 }
--- random input {   [32768]f64 }
--- random input {   [65536]f64 }
--- random input {  [131072]f64 }
--- random input {  [262144]f64 }
--- random input {  [524288]f64 }
--- random input { [1048576]f64 }
--- random input { [2097152]f64 }
--- random input { [4194304]f64 }
-
 open import "vm_branch_sorting"
 import "lib/github.com/diku-dk/cpprandom/random"
 
@@ -44,7 +25,7 @@ def prog_state_init [n] [m] (stdlib: []vm.instruction) (p: i64 -> [m]vm.instruct
     (states, starting_indices, programs)
 
 -- ==
--- entry: sort_fac sort_fib sort_fib_tail
+-- entry: sort_fib_tail
 -- script input { rand_10     128i64 }
 -- script input { rand_10     256i64 }
 -- script input { rand_10     512i64 }
