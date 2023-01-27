@@ -22,7 +22,7 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
 
   type state =
     { mem: v8.vector u
-    , pc: i64
+    , pc: (i32,i32)
     , stack: stack
     }
 
@@ -33,7 +33,7 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
     let h = assert (s.stack.head + 1 < 32) s.stack.head in
     s with stack.mem  = v32.set h v s.stack.mem
       with stack.head = h + 1
-      with pc         = s.pc + 1
+      with pc         = (s.pc.0, s.pc.1 + 1)
 
   def stack_pop (s: state) : (state, u) =
     let h = assert (s.stack.head > 0) s.stack.head in
@@ -58,12 +58,12 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
   def init v : state =
     { mem       = v8.replicate v
     , stack     = stack_init v
-    , pc        = 0
+    , pc        = (0,0)
     }
 
   def get    (s: state) (i:idx)   : u     = v8.get i s.mem
   def set    (s: state) (i:idx) v : state = s with mem = v8.set i v s.mem
-                                              with pc  = s.pc + 1
+                                              with pc.1 = s.pc.1 + 1
 
   def return [n] : [n]state -> [n]u = map (\s' -> v8.get 0 s'.mem)
 
@@ -73,17 +73,24 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
   def (-) (a: u) (b: u) = t.(a - b)
   def sqrt (a: u)       = t.sqrt a
   def to_i64 (a:u)      = t.to_i64 a
+  def to_bits (a:u)     = t.to_bits a
+  def from_bits (a:u64) = t.from_bits a
 
   def (==) (a: u) (b: u) = t.(a == b)
   def (<) (a: u) (b: u)  = t.(a < b)
 
-  def jmp (s: state) (offset: i64) = s with pc = offset
+  def jmp (s: state) (offset: u64) =
+    s with pc = ( i32.u64 (offset >> u64.i32 u32.num_bits)
+                -- TODO: Check if this is even remotely close to
+                -- the correct answer
+                , i32.u64 (offset & u64.u32 u32.highest))
 
-  def eval [m] [n] (s: [m]state) (pidx: [m]i64) (p: [n]instruction) =
+  def eval [m] [n] [num_progs] (s: [m]state) (pidx: [m](i32,i32)) (p: [num_progs][n]instruction) =
 
-    let step (s: state) : state =
-      let fstval : u = get s ra in
-      match p[s.pc]
+    let step (instr: instruction) (s: state) : state =
+      let fstval : u = assert (i64.(i32 s.pc.0 < num_progs)) (get s ra) in
+
+      match instr
       case #add  index -> (+) fstval (get s index) |> set s ra
       case #mul  index -> (*) fstval (get s index) |> set s ra
       case #sqrt       -> sqrt fstval              |> set s ra
@@ -97,15 +104,24 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
 
       -- Jump around!
       case #jmp    offset     -> jmp s offset
-      case #jmpreg idx        -> jmp s (get s idx |> t.to_i64)
-      case #jmplt  idx offset -> if (<) fstval (get s idx) then jmp s offset else s with pc = i64.(s.pc + 1)
+      case #jmpreg idx        -> jmp s (get s idx |> t.to_bits)
+      case #jmplt  idx offset -> if (<) fstval (get s idx) then
+                                   jmp s offset
+                                 else
+                                   s with pc.1 = i32.(s.pc.1 + 1)
 
-      case #halt -> s with pc = -1
+      case #halt -> s --with pc = -1
+
+    let halted (instr: instruction) : bool =
+      match instr
+      case #halt -> true
+      case _ -> false
+    in
 
     let evaluate (s: state) =
-      loop s = s
-      while s.pc != -1
-      do step s
+      (.0) <| loop (s,i) = (s,p[s.pc.0,s.pc.1])
+      while ! halted i
+      do let s' = step i s in (s', assert (i64.(i32 s.pc.0 < num_progs)) p[s'.pc.0,s'.pc.1])
 
     in map evaluate (map2 (\(s':state) pc -> s' with pc = pc) s pidx)
 }
