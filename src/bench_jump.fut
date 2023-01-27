@@ -28,6 +28,13 @@ module real = f64
 module vm = interp_vector_8_branch real
 
 
+def pad [n] (p: [n]vm.instruction) (sz:i64) : [sz]vm.instruction =
+  if n == sz then p :> [sz]vm.instruction
+  else
+    let padding = replicate (sz - n) vm.(#halt)
+    in (p ++ padding) :> [sz]vm.instruction
+
+
 def init_states [n] vv =
   replicate n (vm.init 0) |> map2 (\v s -> vm.set s vm.ra v) vv
 
@@ -76,8 +83,8 @@ let fibprog : []vm.instruction = vm.([
       #store rb      --  0 -- assume ra is input, `n` -- move n to rb
     , #cnst   2      --  1 --
     , #store rc      --  2
-    , #load  rb      --  3
-    , #jmplt rc 36   --  4 -- if n < 2 -> return
+    , #load  rb       --  3
+    , #jmplt rc 36u64 --  4 -- if n < 2 -> return
 
     , #push  rb      --  5 -- save n on the stack        -- stack +1
     , #cnst (-1)     --  6 --
@@ -104,7 +111,7 @@ let fibprog : []vm.instruction = vm.([
     , #add   rc      -- 22 -- ra = n - 2
 
     , #store rd      -- 23 -- rd = n - 2
-    , #cnst  29      -- 24 -- jump back to fib(n-1) + fib(n-2)
+    , #cnst  (f64.from_bits 29)      -- 24 -- jump back to fib(n-1) + fib(n-2)
     , #push  ra      -- 25 -- pc + 2
     , #load  rd      -- 26 -- ra = (n-2)
     , #jmp    0      -- 27 -- ra = fib (n-2)
@@ -182,21 +189,22 @@ let fibprog_tail : []vm.instruction = vm.([
 
 
 entry jump_half [n] (a: [n]f64) : [n]f64 =
-  let stdlib = [] in
-  let prog = const vm.(
+  let prog = vm.(
     [ #store rb
     , #cnst  0.5f64
     , #mul   rb
     , #halt
     ])
-  in
 
-  let (states, starting_indices, programs) = prog_state_init stdlib prog a in
-  vm.eval states starting_indices programs |> vm.return
+  in let starting_indices = replicate n (0, 0)
+  in let prog_final = [prog]
+  in let states = init_states a
+
+  in vm.eval states starting_indices prog_final |> vm.return
 
 
 entry jump_fac [n] (a: [n]f64) : [n]f64 =
-  let prog (offset: i64): []vm.instruction = vm.(
+  let prog : []vm.instruction = vm.(
     -- f (n) = !n
     -- int factorial(int n) {
     --  int a = 1;
@@ -216,7 +224,7 @@ entry jump_fac [n] (a: [n]f64) : [n]f64 =
     , #store re     --  5 -- alias rd = 1
 
     , #load  rc     --  6 -- load is necessary when we jump to here
-    , #jmplt rd (offset + 14i64) --  7 -- return 1
+    , #jmplt rd ((1 << u64.i32 i32.num_bits) | 14u64) --  7 -- return 1
 
     , #mul   rb     --  8 --
     , #store rb     --  9 --
@@ -225,43 +233,58 @@ entry jump_fac [n] (a: [n]f64) : [n]f64 =
     , #add   re     -- 11 --
     , #store rc     -- 12 --
 
-    , #jmp (offset + (6i64)) -- 13 -- jmp START
+    , #jmp ((1 << u64.i32 i32.num_bits) | 6u64) -- 13 -- jmp START
 
     -- END
     , #load  rb     -- 14
     , #halt         -- 15
     ])
-  in
 
-  let (states, starting_indices, programs) = prog_state_init [] prog a in
-  vm.eval states starting_indices programs |> vm.return
+  in let starting_indices = replicate n (0, 0)
+  in let prog_final = [prog]
+  in let states = init_states a
+
+  in vm.eval states starting_indices prog_final |> vm.return
 
 
 entry jump_fib [n] (a: [n]f64) : [n]f64 =
   let stdlib = copy fibprog in
-  let prog (progstart:i64) : [6]vm.instruction = vm.(
+  let prog : [6]vm.instruction = vm.(
     [ #store rb
-    , #cnst ((f64.i64 progstart) + 5f64)
+    , #cnst (f64.from_bits ((1 << u64.i32 i32.num_bits) | 5u64))
     , #push ra
     , #load rb
     , #jmp  0
     , #halt
-    ]) in
+    ])
 
-  let (states, starting_indices, programs) = prog_state_init stdlib prog a in
-  vm.eval states starting_indices programs |> vm.return
+  in let maxlen = i64.max (length prog) (length stdlib)
+  in let prog' = pad prog maxlen
+  in let stdlib' = pad stdlib maxlen
+
+  in let starting_indices = replicate n (1, 0)
+  in let prog_final = [stdlib', prog']
+  in let states = init_states a
+  in vm.eval states starting_indices prog_final |> vm.return
 
 
 entry jump_fib_tail [n] (a: [n]f64) : [n]f64 =
   let stdlib = copy fibprog_tail in
-  let prog (progstart:i64) : []vm.instruction = vm.(
+  let prog : []vm.instruction = vm.(
     [ #store rb
-    , #cnst ((f64.i64 progstart) + 5f64)
+    , #cnst (f64.from_bits ((1 << u64.i32 i32.num_bits) | 5u64))
     , #push ra
     , #load rb
     , #jmp 0
     , #halt
-    ]) in
+    ])
 
-  let (states, starting_indices, programs) = prog_state_init stdlib prog a in
-  vm.eval states starting_indices programs |> vm.return
+  in let maxlen = i64.max (length prog) (length stdlib)
+  in let prog' = pad prog maxlen
+  in let stdlib' = pad stdlib maxlen
+
+  in let starting_indices = replicate n (1, 0)
+  in let prog_final = [stdlib', prog']
+  in let states = init_states a
+
+  in vm.eval states starting_indices prog_final |> vm.return
