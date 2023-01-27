@@ -77,7 +77,6 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
 
   def (==) (a: u) (b: u) = t.(a == b)
   def (<) (a: u) (b: u)  = t.(a < b)
-  --def (!=) (a: vm.instruction) (b: vm.instruction) = vm.instruction.(!=) a b
 
   def jmp (s: state) (offset: i64) = s with pc = offset
 
@@ -102,7 +101,7 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
       case #jmpreg idx        -> jmp s (get s idx |> t.to_i64)
       case #jmplt  idx offset -> if (<) fstval (get s idx) then jmp s offset else s with pc = i64.(s.pc + 1)
 
-      case #halt -> s --with pc = -1
+      case #halt -> s
     in
 
     -- Normalize pc to be within [0; n]
@@ -118,13 +117,6 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
       map2 (i64.-) normalized_pcs npc' |> i64.maximum
       -- MaximumProgramCounterDiff > 3
       |> i64.((<) 3)
-
-    -- Determine wether or not we should sort the indices
-    let should_sort_sqrt [m] (normalized_pcs: [m]i64) : bool =
-      let npc' = rotate (-1) normalized_pcs in
-      map2 (i64.-) normalized_pcs npc' |> i64.maximum |> f64.i64
-      -- MaximumProgramCounterDiff > sqrt(m / n)
-      |> f64.((<) (f64.sqrt f64.i64(m / n)))
 
     -- Determine wether or not we should sort the indices
     let should_sort [m] (normalized_pcs: [m]i64) : bool =
