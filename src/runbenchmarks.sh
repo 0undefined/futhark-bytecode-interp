@@ -4,8 +4,8 @@
 # file.
 
 # Parameters
-BACKEND=opencl
-FILE=bench_simple.fut
+BACKEND=${1:-opencl}
+FILE=${2:-bench_simple.fut}
 BENCHMARK_DIR=${BENCHMARK_DIR:-.benchmarks}
 ! [ -d "${BENCHMARK_DIR}" ] && mkdir -p ${BENCHMARK_DIR}
 
