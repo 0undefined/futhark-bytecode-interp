@@ -21,7 +21,7 @@ type instruction_simple 'idx 'a =
 
 -- | An extended version of `instruction_simple`, with branching. It includes
 -- | seperate comparison instructions and a diverse set of conditional jumps.
-type instruction_jump_long 'idx 'a =
+type instruction_jump_complex 'idx 'a =
   -- Common instructions with `instruction_simple`
   -- Adds default register and register at `idx`; stores result in default reg.
     #add  idx

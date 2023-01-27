@@ -64,7 +64,7 @@ module type interpreter_branch_complex = {
   include interpreter
     with idx=idx
     with u=u
-    with instruction = instruction_jump_long idx u
+    with instruction = instruction_jump_complex idx u
 }
 
 

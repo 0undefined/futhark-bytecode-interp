@@ -26,6 +26,18 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
     , stack: stack
     }
 
+  type idx = i64
+  let ra : idx = 0
+  let rb : idx = 1
+  let rc : idx = 2
+  let rd : idx = 3
+  let re : idx = 4
+  let rf : idx = 5
+  let rg : idx = 6
+  let rh : idx = 7
+
+  type instruction = instruction_jump idx u
+
   def stack_init (v: u)       : stack = {mem = v32.replicate v, head = 0i64}
   def stack_peek (s: state)   : u     = v32.get s.stack.head s.stack.mem
 
@@ -38,22 +50,9 @@ module interp_vector_8_branch (t: memtype) : interpreter_branch
   def stack_pop (s: state) : (state, u) =
     let h = assert (s.stack.head > 0) s.stack.head in
     let s'     = s with stack.head = h - 1
-    --             with pc = s.pc + 1
     in
     let retval = v32.get (h - 1) s.stack.mem --|> trace
     in (s', retval)
-
-  type idx = i64
-  let ra : idx = 0
-  let rb : idx = 1
-  let rc : idx = 2
-  let rd : idx = 3
-  let re : idx = 4
-  let rf : idx = 5
-  let rg : idx = 6
-  let rh : idx = 7
-
-  type instruction = instruction_jump idx u
 
   def init v : state =
     { mem       = v8.replicate v

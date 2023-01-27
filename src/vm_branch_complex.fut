@@ -17,16 +17,28 @@ module interp_vector_8_branch_complex (t: memtype) : interpreter_branch_complex
 
   type stack =
     { mem:  v32.vector u -- callstack[head] is the current PC
-    , head: i64            -- keeps track of the current frame in the callstack
+    , head: i64          -- keeps track of the current frame in the callstack
     }
 
   type state =
     { mem: v8.vector u
     , pc: i64
     , stack: stack
-    , zf: bool                     -- zero flag
-    , cf: bool                     -- carry flag
+    , zf: bool -- zero flag
+    , cf: bool -- carry flag
     }
+
+  type idx = i64
+  let ra : idx = 0
+  let rb : idx = 1
+  let rc : idx = 2
+  let rd : idx = 3
+  let re : idx = 4
+  let rf : idx = 5
+  let rg : idx = 6
+  let rh : idx = 7
+
+  type instruction = instruction_jump_complex idx u
 
   def stack_init (v: u)       : stack = {mem = v32.replicate v, head = 0i64}
   def stack_peek (s: state)   : u     = v32.get s.stack.head s.stack.mem
@@ -44,18 +56,6 @@ module interp_vector_8_branch_complex (t: memtype) : interpreter_branch_complex
     in
     let retval = v32.get (h - 1) s.stack.mem --|> trace
     in (s', retval)
-
-  type idx = i64
-  let ra : idx = 0
-  let rb : idx = 1
-  let rc : idx = 2
-  let rd : idx = 3
-  let re : idx = 4
-  let rf : idx = 5
-  let rg : idx = 6
-  let rh : idx = 7
-
-  type instruction = instruction_jump_long idx u
 
   def init v : state =
     { mem       = v8.replicate v
